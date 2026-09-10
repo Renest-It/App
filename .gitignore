@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---- Node ----
+node_modules/
+dist/
+.vite/
+
+# ---- Env files (additional) ----
+.env.local
+.env.*.local
