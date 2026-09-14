@@ -225,3 +225,7 @@ dist/
 # ---- Env files (additional) ----
 .env.local
 .env.*.local
+
+# ---- Claude Code (local tooling, not shared via repo) ----
+.claude/skills/
+openspec/
