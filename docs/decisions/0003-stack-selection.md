@@ -29,7 +29,7 @@ ReNest is built on:
 Supabase is used for Postgres, Auth, and Storage as one managed vendor
 rather than three separate ones, which minimizes the number of accounts,
 credentials, and dashboards a three-person team has to stand up and keep in
-sync. See [[0006-authorization-in-fastapi]] for how authorization is
+sync. See ADR 0006, Authorization Lives in FastAPI, for how authorization is
 layered on top of Supabase's auth and database.
 
 ## Alternatives Considered
@@ -69,7 +69,7 @@ becomes relevant to deployment at that stage.
   outage during a checkpoint.
 - Because Supabase Auth is used but Supabase's client-side database access
   is not, the traffic-flow and authorization decisions in
-  [[0006-authorization-in-fastapi]] apply directly on top of this stack.
+  ADR 0006 (Authorization Lives in FastAPI) apply directly on top of this stack.
 - Alembic migrations mean schema changes are code-reviewed and versioned
   alongside the FastAPI app, rather than made ad hoc through the Supabase
   dashboard.
