@@ -1,7 +1,9 @@
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql://postgres:postgres@localhost:5432/renest"
+    database_url: str
+    supabase_url: str
+    supabase_anon_key: str
     environment: str = "development"
 
     class Config:
