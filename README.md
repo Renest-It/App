@@ -7,6 +7,15 @@ ReNest is a peer-to-peer marketplace built for the Creighton University communit
 1. `cd backend`
 2. `python -m venv venv && source venv/bin/activate` (Windows: `venv\Scripts\activate`)
 3. `pip install -r requirements.txt`
-4. `cp .env.example .env` and fill in your local DB credentials
+4. `cp .env.example .env` and fill in `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` (see below — the app will not start without these)
 5. `uvicorn app.main:app --reload`
 6. Visit `http://127.0.0.1:8000/docs` for interactive API docs
+
+### Getting your Supabase credentials
+
+1. Ask a teammate for an invite to the ReNest Supabase org (or request real credentials via the team channel / password manager) — do not create a separate personal project.
+2. In the [Supabase dashboard](https://supabase.com/dashboard), open the ReNest project, then go to **Project Settings → Database**.
+3. Under **Connection string**, copy the **pooled** connection string (port `6543`, using the `...pooler.supabase.com` host) — not the direct connection (port `5432`). The pooler handles connection recycling correctly on Render's free tier; the direct connection does not.
+4. Set that value as `DATABASE_URL` in your local `.env`, substituting your database password into the string.
+5. Under **Project Settings → API**, copy the **Project URL** into `SUPABASE_URL` and the **anon public** key into `SUPABASE_ANON_KEY`.
+6. Never commit `.env` or paste real credentials into the repo, issues, or PRs — `.env` is git-ignored, and only `.env.example` (with blank placeholder values) should be committed. If a credential is ever committed by accident, rotate it in Supabase immediately; removing the commit afterward is not sufficient, since the value remains in git history.
