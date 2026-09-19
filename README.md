@@ -19,3 +19,20 @@ ReNest is a peer-to-peer marketplace built for the Creighton University communit
 4. Set that value as `DATABASE_URL` in your local `.env`, substituting your database password into the string.
 5. Under **Project Settings → API**, copy the **Project URL** into `SUPABASE_URL` and the **anon public** key into `SUPABASE_ANON_KEY`.
 6. Never commit `.env` or paste real credentials into the repo, issues, or PRs — `.env` is git-ignored, and only `.env.example` (with blank placeholder values) should be committed. If a credential is ever committed by accident, rotate it in Supabase immediately; removing the commit afterward is not sufficient, since the value remains in git history.
+
+## Frontend Setup
+
+**Prerequisites:** [Node.js](https://nodejs.org/) `^20.19` or `>=22.12` (this is Vite's requirement) and npm, which ships with Node. Check with `node -v`.
+
+1. `cd frontend`
+2. `npm install`
+3. `npm run dev` — starts the dev server at `http://localhost:5173`
+4. `npm run build` — type-checks with `tsc` and produces a production build in `frontend/dist/`
+
+Other scripts, all run from `frontend/`:
+
+- `npm run lint` — ESLint
+- `npm run format` — format everything with Prettier (`npm run format:check` verifies without writing)
+- `npm run preview` — serve the production build locally
+
+The frontend does not call the backend yet, so it runs without any `.env` file or a running API.
