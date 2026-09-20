@@ -8,8 +8,17 @@ ReNest is a peer-to-peer marketplace built for the Creighton University communit
 2. `python -m venv venv && source venv/bin/activate` (Windows: `venv\Scripts\activate`)
 3. `pip install -r requirements.txt`
 4. `cp .env.example .env` and fill in `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` (see below — the app will not start without these)
-5. `uvicorn app.main:app --reload`
-6. Visit `http://127.0.0.1:8000/docs` for interactive API docs
+5. `alembic upgrade head` to bring your database up to the latest schema (see below — this is a **required step after every `git pull`**, not just on first setup)
+6. `uvicorn app.main:app --reload`
+7. Visit `http://127.0.0.1:8000/docs` for interactive API docs
+
+### Database Migrations
+
+The database is a single shared Supabase Postgres instance — everyone's schema is kept in sync through Alembic rather than hand-run SQL.
+
+- **Run `alembic upgrade head` after every `git pull`.** Any teammate's new migration won't take effect on your machine (or in your queries against the shared database) until you apply it.
+- To create a new migration after changing a model in `app/models/`: `alembic revision --autogenerate -m "description"`, then **hand-review the generated file** before committing — autogenerate misses constraints (like `CHECK` constraints) and can get column type changes wrong.
+- `alembic downgrade base` drops all tables. Since the database is shared, never run this against the real Supabase instance unless you've coordinated with the team — test destructive migration changes against a local/disposable Postgres instance first.
 
 ### Getting your Supabase credentials
 
