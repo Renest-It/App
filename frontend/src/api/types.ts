@@ -1,6 +1,5 @@
-// Mirrors the backend schema exactly (see backend/app/models/{listing,category}.py, T0.8).
-// price_cents stays an integer here — never convert to dollars in the type layer.
-// Use formatPriceCents() from ./format for display.
+// Helps mirror the backend schema (see backend model: T0.8,
+// and the actual response shapes in backend schema: T0.9).
 
 export interface Category {
   id: number;
@@ -8,16 +7,14 @@ export interface Category {
   slug: string;
 }
 
+// What GET /listings actually returns: category is a nested object.
 export interface Listing {
   id: string;
-  seller_id: string;
   title: string;
   description: string | null;
   price_cents: number;
-  category_id: number | null;
-  status: "active" | "sold";
+  category: Category;
   created_at: string;
-  updated_at: string | null;
 }
 
 export interface ListingCreate {
@@ -25,4 +22,17 @@ export interface ListingCreate {
   description?: string | null;
   price_cents: number;
   category_id: number;
+}
+
+// What POST /listings actually returns: category_id is flat, not nested.
+// Different shape from Listing on purpose
+// This matches the real backend response.
+export interface CreatedListing {
+  id: string;
+  title: string;
+  description: string | null;
+  price_cents: number;
+  category_id: number | null;
+  status: "active" | "sold";
+  created_at: string;
 }
