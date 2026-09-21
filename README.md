@@ -20,6 +20,10 @@ The database is a single shared Supabase Postgres instance — everyone's schema
 - To create a new migration after changing a model in `app/models/`: `alembic revision --autogenerate -m "description"`, then **hand-review the generated file** before committing — autogenerate misses constraints (like `CHECK` constraints) and can get column type changes wrong.
 - `alembic downgrade base` drops all tables. Since the database is shared, never run this against the real Supabase instance unless you've coordinated with the team — test destructive migration changes against a local/disposable Postgres instance first.
 
+### Known Stubs
+
+- **`get_current_user()`** (`app/dependencies.py`) is **not real authentication**. It always returns the seeded `test@creighton.edu` user regardless of any request credentials — it does not check tokens, headers, or sessions. It exists so routes can depend on "the current user" via FastAPI dependency injection before real auth exists. It will be replaced with real Supabase JWT verification in E1 (see the `TODO(E1)` comment in the code, ticket SCRUM-20) with the same function signature, so no route using it will need to change.
+
 ### Getting your Supabase credentials
 
 1. Ask a teammate for an invite to the ReNest Supabase org (or request real credentials via the team channel / password manager) — do not create a separate personal project.
