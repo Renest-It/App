@@ -1,0 +1,10 @@
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+# Pycodestyle errors + Pyflakes only, for now. We're bringing ruff in to catch
+# real bugs (unused imports, undefined names, etc.), not to force a big
+# reformat of existing code as a side effect of adding CI. Ignoring E501
+# because line length isn't being enforced by a formatter yet either.
+select = ["E", "F"]
+ignore = ["E501"]
