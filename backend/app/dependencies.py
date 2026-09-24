@@ -1,25 +1,29 @@
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from fastapi import Depends
-
+from app.auth import verify_token
 from app.db import get_db
 from app.models import User
+from app.users import get_or_create_user
+
+# Registers a "bearer" security scheme in the OpenAPI schema, which is what adds the Authorize
+# button to /docs. auto_error=False: a missing header reaches verify_token(None), so it gets the
+# same 401 invalid_token response as every other auth failure (not FastAPI's own 403).
+bearer_scheme = HTTPBearer(
+    auto_error=False,
+    description="Supabase access token. Get one with `python scripts/get_token.py`.",
+)
 
 
-# TODO(E1.5 - SCRUM-28): Replace this stub with real authentication.
-# Token verification already exists: app.auth.verify_token (SCRUM-27). The real version will
-# look roughly like:
-#
-#   def get_current_user(
-#       credentials = Depends(HTTPBearer(auto_error=False)), db: Session = Depends(get_db)
-#   ) -> User:
-#       claims = verify_token(credentials.credentials if credentials else None)
-#       ...find or create the users row for claims.user_id...
-#
-# verify_token raises InvalidTokenError / ForbiddenUserError / AuthUnavailableError, which the
-# handlers registered in main.py turn into 401 / 403 / 503 responses.
-#
-# The signature (Depends(...) -> User) stays the same, so no calling route
-# needs to change when this swap happens.
-def get_current_user(db: Session = Depends(get_db)) -> User:
-    return db.query(User).filter(User.email == "test@creighton.edu").one()
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    """The signed-in user, from the request's bearer token.
+
+    Verifies the token (401/403/503 on failure, see app/auth.py), then returns the user's row,
+    creating it on their first request (409 on an email conflict, see app/users.py).
+    """
+    claims = verify_token(credentials.credentials if credentials else None)
+    return get_or_create_user(db, claims)
