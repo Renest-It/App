@@ -1,5 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { getMe } from "../api/client";
+import type { CurrentUser } from "../api/types";
 import { supabase } from "../lib/supabase";
 import { AuthContext, type AuthContextValue } from "./AuthContext";
 import { clearPendingSignup } from "./pendingSignup";
@@ -78,9 +80,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Load the backend's view of the user (GET /me) whenever a different user signs in. This
+  // also makes sure their users row exists right after log-in. Token refreshes keep the same
+  // user id, so they don't refetch. The result is stored with the id it belongs to, so a slow
+  // answer for a previous user is never shown for the next one.
+  const userId = session?.user.id ?? null;
+  const [me, setMe] = useState<{ userId: string; user: CurrentUser | null } | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    getMe()
+      .then((user) => {
+        if (!cancelled) setMe({ userId, user });
+      })
+      .catch(() => {
+        // Auth failures are handled globally (sign-out + redirect). Anything else (e.g. a 503)
+        // leaves currentUser empty; the Account page shows its placeholder.
+        if (!cancelled) setMe({ userId, user: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const currentUser = me && me.userId === userId ? me.user : null;
+  const currentUserLoading = userId !== null && me?.userId !== userId;
+
   const value = useMemo<AuthContextValue>(
-    () => ({ session, user: session?.user ?? null, loading, signUp, signIn, signOut, resend }),
-    [session, loading],
+    () => ({
+      session,
+      user: session?.user ?? null,
+      loading,
+      currentUser,
+      currentUserLoading,
+      signUp,
+      signIn,
+      signOut,
+      resend,
+    }),
+    [session, loading, currentUser, currentUserLoading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

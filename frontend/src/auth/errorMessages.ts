@@ -20,3 +20,18 @@ export function authErrorMessage(error: AuthError | null | undefined) {
   if (!error) return null;
   return (error.code && messages[error.code]) || GENERIC_ERROR;
 }
+
+// Banners on the log-in page after the app signed someone out (see auth/authFailure.ts).
+export const LOGIN_REASON_BANNERS: Record<string, { variant: "info" | "error"; message: string }> =
+  {
+    expired: { variant: "info", message: "Your session expired. Please log in again." },
+    wrong_domain: { variant: "error", message: "ReNest is only for @creighton.edu accounts." },
+    email_not_confirmed: {
+      variant: "error",
+      message: "Please confirm your email address, then log in.",
+    },
+    email_conflict: {
+      variant: "error",
+      message: "An older account with this email exists. Contact the ReNest team.",
+    },
+  };

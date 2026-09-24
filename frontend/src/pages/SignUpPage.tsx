@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { Alert } from "../components/Alert";
 import { AuthLayout } from "../components/AuthLayout";
 import { Button } from "../components/Button";
@@ -7,6 +7,7 @@ import { TextField } from "../components/TextField";
 import { TextLink } from "../components/TextLink";
 import { authErrorMessage } from "../auth/errorMessages";
 import { startPendingSignup } from "../auth/pendingSignup";
+import { safeNext } from "../auth/safeNext";
 import { useAuth } from "../auth/useAuth";
 import {
   PASSWORD_MIN_LENGTH,
@@ -40,6 +41,8 @@ function validate({ displayName, email, password }: Fields) {
 export function SignUpPage() {
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  // Keep a pending "next" when switching to the log-in page.
+  const next = safeNext(useSearchParams()[0].get("next"));
   const [fields, setFields] = useState<Fields>({ displayName: "", email: "", password: "" });
   const [attempted, setAttempted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -134,7 +137,10 @@ export function SignUpPage() {
           </Button>
           {/* Negative margin keeps Figma's spacing while the link keeps a 44px tap area. */}
           <p className="-my-3 flex items-center gap-1 text-sm text-text-muted">
-            Already have an account? <TextLink to="/login">Log in</TextLink>
+            Already have an account?{" "}
+            <TextLink to={next ? `/login?${new URLSearchParams({ next })}` : "/login"}>
+              Log in
+            </TextLink>
           </p>
         </div>
       </form>

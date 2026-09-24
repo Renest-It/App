@@ -41,6 +41,21 @@ Routes get the signed-in user with `current_user: User = Depends(get_current_use
 2. `python scripts/get_token.py` prints an access token (valid for 1 hour).
 3. Open http://127.0.0.1:8000/docs → **Authorize**, paste the token, and try `GET /me` or `POST /listings`. Or: `curl -H "Authorization: Bearer $(python scripts/get_token.py)" http://127.0.0.1:8000/me`
 
+**The API is login-only.** Every route requires a token except `GET /health` (a liveness check with no data). That includes `GET /listings`, `GET /categories`, and **`GET /health/db`**. To check the database connection of a deployment, send a token:
+
+```bash
+curl -H "Authorization: Bearer $(python scripts/get_token.py)" https://<backend-host>/health/db
+```
+
+`tests/test_access_control.py` fails CI if a new route is added without protection. To make a route public on purpose, add it to `PUBLIC_PATHS` there.
+
+### Auth in local development
+
+1. **Backend:** `backend/.env` with `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` (see Getting your Supabase credentials below), and **`FRONTEND_ORIGIN=http://localhost:5173`**. Without that last one, the browser blocks the local frontend's API calls (CORS). Run `uvicorn app.main:app --reload`.
+2. **Frontend:** `frontend/.env` with `VITE_API_BASE_URL=http://localhost:8000`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`. Run `npm run dev`.
+3. **An account:** sign up in the app with a `@creighton.edu` address and confirm the email, or create an auto-confirmed test account in the Supabase dashboard (step 1 of Testing protected endpoints above).
+4. Open http://localhost:5173. **Every page except sign-up, log-in, and the email-confirmation pages requires logging in.** Logged-out visitors are sent to `/login` and brought back to the page they wanted afterward.
+
 ### Database Migrations
 
 The database is a single shared Supabase Postgres instance — everyone's schema is kept in sync through Alembic rather than hand-run SQL.
@@ -97,6 +112,11 @@ Other pieces:
 - `<GuestOnly>` (`src/auth/GuestOnly.tsx`) wraps pages only signed-out visitors should see. Signed-in users are sent to Home.
 - `PASSWORD_MIN_LENGTH` in `src/auth/validation.ts` must match Supabase → Authentication → Sign In / Providers → Email → "Minimum password length" (currently **6**). Change both together.
 - On page load, a saved session is checked with Supabase. If the account was deleted, the session is cleared, so you aren't stuck "logged in" as a user that no longer exists.
+- **All API calls go through `request()`** in `src/api/client.ts`. It's the only place that attaches `Authorization: Bearer <token>` and detects auth failures, so new API functions should be one-liners that call it (see `getListings`). Errors are `ApiError` (with `status` and the backend's `code`) or `NetworkError`.
+- **Login-only pages:** `<RequireAuth>` wraps the app-shell route in `src/router.tsx`, so every page added as a child of `/` is protected automatically. Logged-out visitors go to `/login?next=<path>`.
+- **`safeNext()`** (`src/auth/safeNext.ts`) validates `next` so it can only point inside the app (no open redirect). Use it for any "redirect after X" parameter.
+- **Session expired / blocked account:** if the API answers 401, 403 `wrong_domain` / `email_not_confirmed`, or 409 `email_conflict`, the app signs out in this browser and shows a banner on the log-in page. A 503 is shown as a normal error instead.
+- **`currentUser`** from `useAuth()` is the backend's record of the signed-in user (from `GET /me`, loaded once per log-in). The Account page shows its name and email.
 
 | Route | Page |
 |---|---|
