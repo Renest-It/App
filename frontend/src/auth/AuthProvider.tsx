@@ -11,7 +11,8 @@ async function signUp(email: string, password: string) {
     password,
     // Send the verification link back to whichever site the user signed up from
     // (localhost, a Vercel preview, or production). Must be on Supabase's redirect allow-list.
-    options: { emailRedirectTo: window.location.origin },
+    // The trailing slash matters: allow-list patterns end in "/**", which needs a "/" to match.
+    options: { emailRedirectTo: `${window.location.origin}/` },
   });
   return { error };
 }

@@ -72,9 +72,9 @@ These settings live in the Supabase dashboard, not in code, so this list is the 
 - Redirect URLs:
   - `http://localhost:5173/**` — local dev
   - `https://renest-frontend.vercel.app/**` — production
-  - `https://renest-frontend-*-saraeavilas-projects.vercel.app/**` — Vercel preview deploys
+  - `https://app-*-saraeavilas-projects.vercel.app/**` — Vercel preview deploys
 
-  A sign-up from a site not on this list is sent to the Site URL instead.
+  A sign-up from a site not on this list is sent to the Site URL instead. Redirect addresses must end in `/` to match the `/**` patterns (the frontend adds it).
 
 **Authentication → SMTP Settings** (custom SMTP via [Brevo](https://www.brevo.com), free plan)
 - Host `smtp-relay.brevo.com`, port `587`. The username is Brevo's SMTP login (`…@smtp-brevo.com`), found under Brevo → SMTP & API → **SMTP** tab.
