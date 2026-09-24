@@ -1,3 +1,6 @@
+import "@fontsource-variable/geist";
+import "@fontsource-variable/instrument-sans";
+import "./index.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router/dom";
