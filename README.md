@@ -40,8 +40,12 @@ The database is a single shared Supabase Postgres instance — everyone's schema
 
 1. `cd frontend`
 2. `npm install`
-3. `npm run dev` — starts the dev server at `http://localhost:5173`
-4. `npm run build` — type-checks with `tsc` and produces a production build in `frontend/dist/`
+3. `cp .env.example .env` and fill in (the app shows a blank page with an "is not set" error in the console without these):
+   - `VITE_API_BASE_URL` — `http://localhost:8000` when running the backend locally
+   - `VITE_SUPABASE_URL` — Supabase **Project Settings → API → Project URL**
+   - `VITE_SUPABASE_ANON_KEY` — the **anon public** key from the same page. **Never** use the `service_role` key anywhere in `frontend/`: every `VITE_` value is bundled into the public JavaScript.
+4. `npm run dev` — starts the dev server at `http://localhost:5173`
+5. `npm run build` — type-checks with `tsc` and produces a production build in `frontend/dist/`
 
 Other scripts, all run from `frontend/`:
 
@@ -49,4 +53,49 @@ Other scripts, all run from `frontend/`:
 - `npm run format` — format everything with Prettier (`npm run format:check` verifies without writing)
 - `npm run preview` — serve the production build locally
 
-The frontend does not call the backend yet, so it runs without any `.env` file or a running API.
+The same three `VITE_` variables are set in the Vercel project for **Production** and **Preview**. They're public values, so Vercel's plain (non-sensitive) type is fine.
+
+### Auth in the frontend
+
+Use `useAuth()` from `src/auth/useAuth.ts` for anything auth-related. It returns `session`, `user`, `loading`, `signUp`, `signIn`, and `signOut`. The actions return `{ error }` instead of throwing. Wait for `loading` to be `false` before treating a `null` user as logged out, or the page will flash the logged-out view on reload. `src/lib/supabase.ts` is the only Supabase client; import it rather than calling `createClient` anywhere else.
+
+## Auth & Email Setup (Supabase dashboard)
+
+These settings live in the Supabase dashboard, not in code, so this list is the record of how they're configured. Update it if you change any of them.
+
+**Authentication → Sign In / Providers → Email**
+- [x] Email provider enabled
+- [x] "Confirm email" on — users can't sign in until they click the verification link
+
+**Authentication → URL Configuration**
+- Site URL: `https://renest-frontend.vercel.app`
+- Redirect URLs:
+  - `http://localhost:5173/**` — local dev
+  - `https://renest-frontend.vercel.app/**` — production
+  - `https://renest-frontend-*-saraeavilas-projects.vercel.app/**` — Vercel preview deploys
+
+  A sign-up from a site not on this list is sent to the Site URL instead.
+
+**Authentication → SMTP Settings** (custom SMTP via [Brevo](https://www.brevo.com), free plan)
+- Host `smtp-relay.brevo.com`, port `587`. The username is Brevo's SMTP login (`…@smtp-brevo.com`), found under Brevo → SMTP & API → **SMTP** tab.
+- The password is a Brevo **SMTP key** (starts with `xsmtpsib-`). An API key (`xkeysib-`) fails with `535 Authentication failed`.
+- Sender name `ReNest`; sender address is the team Gmail, verified as a single sender in Brevo. Don't use an `@creighton.edu` sender: Creighton's filters reject mail claiming its domain from outside servers.
+- Brevo and team-mailbox credentials are in the team password manager, never in the repo.
+
+**Authentication → Email Templates → Confirm signup**
+- Subject: `Confirm your ReNest account`
+- Body: paste the whole of [`supabase/templates/confirm-signup.html`](supabase/templates/confirm-signup.html). Edit the file in the repo and re-paste it; don't edit only in the dashboard.
+
+**Email limits**
+
+| | Limit | Notes |
+|---|---|---|
+| Supabase built-in email | 2 / hour | Checked 2026-09-23. Testing only; not used. |
+| Supabase auth email rate limit | 30 / hour | Set by us, 2026-09-23 |
+| Brevo free plan | 300 / day | Checked 2026-09-23 |
+
+**Delivery test (2026-09-23):** test sign-ups to `@creighton.edu` inboxes of people outside the Supabase project all arrived in the **inbox** (not spam). The email was checked on a phone in iOS Mail and the Gmail app: readable without zooming, with an easy-to-tap button.
+
+**If emails start landing in spam:** buy a domain, verify it in [Resend](https://resend.com) (SPF/DKIM records), and swap the SMTP settings above to Resend's. Only the dashboard settings change; no code changes.
+
+**Known gotcha:** signing up with an email that's already registered returns success with no error. Supabase does this on purpose so nobody can find out which emails have accounts. Sign-up pages should always say "check your email", never "account created".
