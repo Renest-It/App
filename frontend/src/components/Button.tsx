@@ -2,10 +2,12 @@ import { LoaderCircle } from "lucide-react";
 import type { ButtonHTMLAttributes } from "react";
 import { Link, type LinkProps } from "react-router";
 
-type Variant = "primary" | "secondary";
+type Variant = "primary" | "secondary" | "danger";
 
 const base =
-  "flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-6 py-3.5 " +
+  // Height comes from min-h-12 (48px), not vertical padding, so bordered variants
+  // (secondary, danger) are the same height as primary.
+  "flex min-h-12 w-full items-center justify-center gap-2 rounded-md px-6 py-2 " +
   "text-body leading-5 font-semibold transition-colors " +
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
   "disabled:cursor-not-allowed disabled:opacity-60";
@@ -13,6 +15,9 @@ const base =
 const variants: Record<Variant, string> = {
   primary: "bg-accent text-surface hover:bg-accent/90",
   secondary: "border border-border bg-surface text-text-muted hover:bg-bg",
+  // Destructive actions such as Log Out. Figma's lighter red text is too low-contrast on the
+  // pink background, so the text uses danger-text (see ADR 0008 / E1.3 design notes).
+  danger: "border border-danger bg-danger-soft text-danger-text hover:bg-danger-soft-strong",
 };
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
