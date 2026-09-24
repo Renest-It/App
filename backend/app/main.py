@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import register_auth_error_handlers
 from app.config import settings
 from app.routers import categories, health, listings
 
 app = FastAPI(title="ReNest API")
+register_auth_error_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
