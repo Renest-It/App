@@ -83,9 +83,32 @@ Other pieces:
 
 The `@creighton.edu` check on the sign-up form is for user experience only. The backend enforces the domain (SCRUM-27, ADR 0006).
 
+### App shell
+
+`AppShell` (`src/components/AppShell.tsx`) is the navigation around every in-app page: a left rail on desktop (1024px and up) and a bottom tab bar on phones. It's the element of the `/` route in `src/router.tsx`.
+
+- **To add a new in-app page, add it as a child of that route.** Don't wrap pages in the shell yourself.
+- E1.6's route protection wraps that one route, rather than each page.
+- The shell adds page padding, plus space for the mobile tab bar, so pages don't need their own outer padding. The auth pages sit outside the shell and use `AuthLayout` instead.
+- Nav items are defined once in `NAV_ITEMS`, which feeds both the rail and the tab bar.
+
+| Route | Page |
+|---|---|
+| `/` | Home: the listings list |
+| `/sell` | Sell: the create-listing form (the old `/new` redirects here) |
+| `/account` | Account: a placeholder with the Log Out button (moves to Settings later) |
+| Messages | Not a route: opens Creighton webmail (`https://outlook.office.com/mail`) in a new tab. There's no in-app messaging. |
+
 ### Styling
 
 Tailwind CSS v4 (see [ADR 0008](docs/decisions/0008-styling.md)). Design values from Figma live in the `@theme` block in `src/index.css`, with colors named by job (`bg-surface`, `text-text-muted`, `bg-accent`, `border-danger`, …). Build pages from the shared components in `src/components/` (`Button`, `TextField`, `Alert`, `AuthLayout`, `TextLink`), and don't use raw hex colors or `[#…]` arbitrary colors in components or pages. If Figma introduces a new value, add it to the theme.
+
+`Button` has three variants:
+- `primary`: the main action
+- `secondary`: outlined
+- `danger`: destructive actions such as Log Out
+
+Nav labels use Geist Mono (`font-mono`).
 
 ## Auth & Email Setup (Supabase dashboard)
 
