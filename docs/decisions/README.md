@@ -45,3 +45,5 @@ the reasoning behind a decision that turned out to be temporary.
 | [0004](0004-monorepo.md) | Monorepo |
 | [0005](0005-modular-monolith.md) | Modular Monolith (Not Microservices) |
 | [0006](0006-authorization-in-fastapi.md) | Authorization Lives in FastAPI |
+| [0007](0007-authentication-and-identity.md) | Authentication and Identity |
+| [0008](0008-styling.md) | Styling with Tailwind CSS |

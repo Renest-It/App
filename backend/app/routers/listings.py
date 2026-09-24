@@ -7,7 +7,8 @@ from app.dependencies import get_current_user
 from app.models import Category, Listing, User
 from app.schemas.listing import ListingCreate, ListingCreateResponse, ListingListItem
 
-router = APIRouter()
+# Login-only API: every route on this router requires a valid token.
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.post("/listings", status_code=201, response_model=ListingCreateResponse)

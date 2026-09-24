@@ -8,6 +8,21 @@ jobs:
   backend:
     name: backend
     runs-on: ubuntu-latest
+    # Disposable Postgres for the database tests (never the shared Supabase database).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: renest_test
+          POSTGRES_PASSWORD: renest_test
+          POSTGRES_DB: renest_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U renest_test -d renest_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: backend
@@ -23,6 +38,14 @@ jobs:
       - run: pip install -r requirements.txt
 
       - run: ruff check .
+
+      - name: Run backend tests
+        run: pytest
+        env:
+          TEST_DATABASE_URL: postgresql://renest_test:renest_test@localhost:5432/renest_test
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          SUPABASE_URL: https://ci.supabase.co
+          SUPABASE_ANON_KEY: ci-key
 
       - name: Confirm the app imports without error
         run: python -c "from app.main import app"

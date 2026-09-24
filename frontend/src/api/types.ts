@@ -36,3 +36,11 @@ export interface CreatedListing {
   status: "active" | "sold";
   created_at: string;
 }
+
+// What GET /me returns: the signed-in user as the backend stored them.
+export interface CurrentUser {
+  id: string;
+  email: string;
+  display_name: string | null;
+  created_at: string;
+}

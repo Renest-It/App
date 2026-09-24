@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/*
+  Design tokens from the Figma auth screens, named by job rather than shade.
+  Use these (bg-surface, text-text-muted, border-danger, ...) instead of raw colors.
+  See docs/decisions/0008-styling.md.
+*/
+@theme {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+  --color-text-placeholder: #94a3b8;
+  --color-border: #e2e8f0;
+
+  --color-accent: #005ca9;
+  --color-accent-soft: #ebf5ff;
+
+  /* Borders and icons use Figma's #ef4444. Error *text* uses danger-text: #ef4444 is
+     ~3.8:1 on white and #dc2626 is ~4.4:1 on the danger-soft banner, both below the
+     4.5:1 WCAG AA minimum for small text. #b91c1c is ~5.9:1 on the banner. */
+  --color-danger: #ef4444;
+  --color-danger-text: #b91c1c;
+  --color-danger-soft: #fef2f2;
+  --color-danger-soft-strong: #fee2e2;
+  --color-danger-border: #fecaca;
+
+  --color-success: #10b981;
+  --color-success-soft: #e6fbf3;
+
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace; /* nav labels */
+
+  /* Figma sizes not in Tailwind's default scale (12/14/16/24 are text-xs/sm/base/2xl). */
+  --text-caption: 0.8125rem; /* 13px — field errors */
+  --text-body: 0.9375rem; /* 15px — body copy, buttons */
+  --text-heading: 1.375rem; /* 22px — logo, mobile card title */
+  --text-nav: 0.6875rem; /* 11px — desktop nav rail labels */
+  --text-nav-sm: 0.625rem; /* 10px — mobile tab bar labels */
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+}
+
+@layer base {
+  body {
+    @apply bg-bg font-sans text-text;
+  }
+
+  /* Preflight strips borders and backgrounds from form controls, which made the (not yet
+     designed) listing pages' inputs and buttons invisible. This only targets controls with
+     no classes at all, so it never touches the shared components and stops applying once
+     those pages are styled. */
+  :where(input, select, textarea, button):not([class]) {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background-color: var(--color-surface);
+    padding: 0.25rem 0.5rem;
+  }
+  :where(button):not([class]) {
+    cursor: pointer;
+  }
+}
