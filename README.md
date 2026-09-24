@@ -13,6 +13,16 @@ ReNest is a peer-to-peer marketplace built for the Creighton University communit
 6. `uvicorn app.main:app --reload`
 7. Visit `http://127.0.0.1:8000/docs` for interactive API docs
 
+### Running backend tests
+
+From `backend/`, run `pytest`. The tests run offline: they sign their own tokens with a locally generated key, so they never call Supabase, and they don't need a database. CI runs them on every PR to `main`.
+
+Unrecognized keys in `backend/.env` are ignored, so you can keep local-only test credentials there (e.g. `TEST_EMAIL` / `TEST_PASSWORD` for a dashboard-created, auto-confirmed test account). Never commit them.
+
+### Authentication
+
+`app/auth.py` → `verify_token(token)` checks a Supabase access token (ES256 against the project's public keys, expiry, audience, issuer, the exact `@creighton.edu` domain, and a confirmed email) and returns the user's `AuthClaims`. Failures become JSON errors with a `code` the frontend can switch on: 401 `invalid_token`, 403 `wrong_domain` or `email_not_confirmed`, 503 `auth_unavailable`. See [ADR 0007](docs/decisions/0007-authentication-and-identity.md). No route uses it yet; E1.5 wires it into `get_current_user()`.
+
 ### Database Migrations
 
 The database is a single shared Supabase Postgres instance — everyone's schema is kept in sync through Alembic rather than hand-run SQL.
@@ -23,7 +33,7 @@ The database is a single shared Supabase Postgres instance — everyone's schema
 
 ### Known Stubs
 
-- **`get_current_user()`** (`app/dependencies.py`) is **not real authentication**. It always returns the seeded `test@creighton.edu` user regardless of any request credentials — it does not check tokens, headers, or sessions. It exists so routes can depend on "the current user" via FastAPI dependency injection before real auth exists. It will be replaced with real Supabase JWT verification in E1 (see the `TODO(E1)` comment in the code, ticket SCRUM-20) with the same function signature, so no route using it will need to change.
+- **`get_current_user()`** (`app/dependencies.py`) is **not real authentication**. It always returns the seeded `test@creighton.edu` user regardless of any request credentials — it does not check tokens, headers, or sessions. It exists so routes can depend on "the current user" via FastAPI dependency injection before real auth exists. Token verification itself now exists (`app/auth.py`, see Authentication above). E1.5 (SCRUM-28) replaces this stub with the real dependency, which calls `verify_token`, with the same function signature, so no route using it will need to change (see the `TODO(E1.5)` comment in the code).
 
 ### Getting your Supabase credentials
 

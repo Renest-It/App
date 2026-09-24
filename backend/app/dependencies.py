@@ -6,14 +6,18 @@ from app.db import get_db
 from app.models import User
 
 
-# TODO(E1 - SCRUM-20): Replace this stub with real Supabase JWT verification.
-# The real implementation will look like:
+# TODO(E1.5 - SCRUM-28): Replace this stub with real authentication.
+# Token verification already exists: app.auth.verify_token (SCRUM-27). The real version will
+# look roughly like:
 #
 #   def get_current_user(
-#       token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+#       credentials = Depends(HTTPBearer(auto_error=False)), db: Session = Depends(get_db)
 #   ) -> User:
-#       payload = verify_supabase_jwt(token)  # validates against Supabase JWKS
-#       return db.query(User).filter(User.id == payload["sub"]).one()
+#       claims = verify_token(credentials.credentials if credentials else None)
+#       ...find or create the users row for claims.user_id...
+#
+# verify_token raises InvalidTokenError / ForbiddenUserError / AuthUnavailableError, which the
+# handlers registered in main.py turn into 401 / 403 / 503 responses.
 #
 # The signature (Depends(...) -> User) stays the same, so no calling route
 # needs to change when this swap happens.
