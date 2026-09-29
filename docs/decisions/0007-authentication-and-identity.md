@@ -2,8 +2,7 @@
 
 ## Status
 
-Accepted (token verification: E1.4 / SCRUM-27). The **User Provisioning** section is completed by
-E1.5 / SCRUM-28.
+Accepted (token verification: E1.4 / SCRUM-27; user provisioning: E1.5 / SCRUM-28).
 
 ## Context
 
@@ -83,12 +82,71 @@ revisiting this ADR.**
 When a token is both on the wrong domain and unconfirmed, the response is `wrong_domain`.
 Response bodies never include the token or library error text.
 
-### User provisioning — to be completed in E1.5 (SCRUM-28)
+### User provisioning (E1.5 / SCRUM-28)
 
-> **Placeholder.** E1.5 fills this section in: how a verified token becomes a `users` row
-> (first-request provisioning, not a database trigger), where the display name comes from
-> (`AuthClaims.display_name`, falling back to the part of the email before the `@`), and how the
-> real `get_current_user()` dependency calls `verify_token`.
+**The backend creates a user's row on their first authenticated request**, inside the real
+`get_current_user()` dependency (`app/dependencies.py` → `app/users.py`), not with a database
+trigger.
+
+- **Order:** `verify_token` runs first. The domain rule, the confirmed-email check, and
+  signature/expiry are all enforced **before any row is read or created**, so a rejected token
+  never produces a `users` row.
+- **IDs:** `users.id` is the Supabase user ID (the token's `sub`). The database no longer
+  generates ids; the E1.5 migration dropped the `gen_random_uuid()` default and removed the fake E0
+  user `test@creighton.edu` along with its listings.
+- **Lookup, then insert:** an existing user costs one primary-key lookup. A first request runs
+  `INSERT … ON CONFLICT (id) DO NOTHING` and then re-reads the row. The explicit `(id)` target
+  means two simultaneous first requests from the same user both succeed with exactly one row, and
+  **only** that case is ignored.
+- **Stored values:** the email is lowercased. `display_name` comes from the sign-up form's metadata
+  (`user_metadata.display_name`), falling back to the part of the email before the `@`.
+- **Captured once:** later requests reuse the row unchanged, so a changed Supabase display name
+  isn't copied over. That's until profile editing exists.
+- **No stub or dev fallback:** the E0 stub is deleted. There is no setting, flag, or environment in
+  which `get_current_user` returns a user without a verified token.
+
+**Email conflicts are an explicit error, never fixed automatically.** If a first-time user's email
+already belongs to a row with a *different* id (typically an admin deleted their Supabase account
+and they signed up again, getting a new Supabase id), the insert hits the `users_email_key` unique
+constraint. The backend then:
+
+- returns **409** `{"code": "email_conflict", "message": "An older account with this email exists. Contact the ReNest team."}`
+- logs a warning with both user ids (never the token)
+- creates, re-points, and deletes nothing
+
+Account deletion in the dashboard is usually a deliberate removal, for example of someone who broke
+the rules. Automatically re-pointing would hand their old listings back the moment they
+re-register, and it means changing a primary key that listings reference. Automatically deleting
+would destroy data on sign-up.
+
+**Manual fix (admin, in the Supabase SQL editor), for a legitimate case.** Use the ids from the
+log. Either:
+
+- **Remove the old account** (and its listings):
+  ```sql
+  BEGIN;
+  DELETE FROM listings WHERE seller_id = '<old_id>';
+  DELETE FROM users WHERE id = '<old_id>';
+  COMMIT;
+  ```
+- **Or keep their history** by moving it to the new id: create the new row, move the listings,
+  then delete the old row, all in one transaction:
+  ```sql
+  BEGIN;
+  -- Free the email on the old row, copy the row to the new id, move listings, remove the old row.
+  UPDATE users SET email = '<old_id>@moved.invalid' WHERE id = '<old_id>';
+  INSERT INTO users (id, email, display_name, created_at)
+    SELECT '<new_id>', '<email>', display_name, created_at FROM users WHERE id = '<old_id>';
+  UPDATE listings SET seller_id = '<new_id>' WHERE seller_id = '<old_id>';
+  DELETE FROM users WHERE id = '<old_id>';
+  COMMIT;
+  ```
+  Afterward the person's next request finds their row under the new id.
+
+**Why first-request provisioning, not a trigger on `auth.users`:** it keeps all identity logic in
+FastAPI next to the domain rule, doesn't couple the schema to Supabase's internal `auth` schema,
+and is covered by the backend test suite (real Postgres, including the concurrency race). The
+cost is one primary-key lookup per authenticated request, which is negligible.
 
 ## Alternatives Considered
 

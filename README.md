@@ -15,13 +15,31 @@ ReNest is a peer-to-peer marketplace built for the Creighton University communit
 
 ### Running backend tests
 
-From `backend/`, run `pytest`. The tests run offline: they sign their own tokens with a locally generated key, so they never call Supabase, and they don't need a database. CI runs them on every PR to `main`.
+From `backend/`, run `pytest`. Token tests run offline: they sign their own tokens with a locally generated key, so they never call Supabase.
+
+**Database tests** need a disposable Postgres and are skipped (with a message) without one. To run them:
+
+```bash
+docker run -d --name renest-test-db -e POSTGRES_USER=renest_test -e POSTGRES_PASSWORD=renest_test \
+  -e POSTGRES_DB=renest_test -p 5433:5432 postgres:16
+TEST_DATABASE_URL=postgresql://renest_test:renest_test@localhost:5433/renest_test pytest
+```
+
+The suite rebuilds that database from the migrations and wipes tables between tests, so **never point `TEST_DATABASE_URL` at the shared Supabase database**. The tests refuse to run against a Supabase host. CI runs everything, including the database tests against a Postgres service container, on every PR to `main`.
 
 Unrecognized keys in `backend/.env` are ignored, so you can keep local-only test credentials there (e.g. `TEST_EMAIL` / `TEST_PASSWORD` for a dashboard-created, auto-confirmed test account). Never commit them.
 
 ### Authentication
 
-`app/auth.py` → `verify_token(token)` checks a Supabase access token (ES256 against the project's public keys, expiry, audience, issuer, the exact `@creighton.edu` domain, and a confirmed email) and returns the user's `AuthClaims`. Failures become JSON errors with a `code` the frontend can switch on: 401 `invalid_token`, 403 `wrong_domain` or `email_not_confirmed`, 503 `auth_unavailable`. See [ADR 0007](docs/decisions/0007-authentication-and-identity.md). No route uses it yet; E1.5 wires it into `get_current_user()`.
+`app/auth.py` → `verify_token(token)` checks a Supabase access token (ES256 against the project's public keys, expiry, audience, issuer, the exact `@creighton.edu` domain, and a confirmed email) and returns the user's `AuthClaims`. Failures become JSON errors with a `code` the frontend can switch on: 401 `invalid_token`, 403 `wrong_domain` or `email_not_confirmed`, 503 `auth_unavailable`. See [ADR 0007](docs/decisions/0007-authentication-and-identity.md).
+
+Routes get the signed-in user with `current_user: User = Depends(get_current_user)` (`app/dependencies.py`). It reads the `Authorization: Bearer <token>` header, verifies it, and returns the user's `users` row, creating it on their first request (`app/users.py`). `users.id` is the Supabase user ID. If a new account's email already belongs to an older row, the response is 409 `email_conflict`; see ADR 0007 for the admin fix. `GET /me` returns the current user.
+
+### Testing protected endpoints
+
+1. Create a test account in Supabase → **Authentication → Users → Add user**, with **Auto Confirm User** on, and add `TEST_EMAIL` / `TEST_PASSWORD` to `backend/.env`. Never commit them.
+2. `python scripts/get_token.py` prints an access token (valid for 1 hour).
+3. Open http://127.0.0.1:8000/docs → **Authorize**, paste the token, and try `GET /me` or `POST /listings`. Or: `curl -H "Authorization: Bearer $(python scripts/get_token.py)" http://127.0.0.1:8000/me`
 
 ### Database Migrations
 
@@ -30,10 +48,6 @@ The database is a single shared Supabase Postgres instance — everyone's schema
 - **Run `alembic upgrade head` after every `git pull`.** Any teammate's new migration won't take effect on your machine (or in your queries against the shared database) until you apply it.
 - To create a new migration after changing a model in `app/models/`: `alembic revision --autogenerate -m "description"`, then **hand-review the generated file** before committing — autogenerate misses constraints (like `CHECK` constraints) and can get column type changes wrong.
 - `alembic downgrade base` drops all tables. Since the database is shared, never run this against the real Supabase instance unless you've coordinated with the team — test destructive migration changes against a local/disposable Postgres instance first.
-
-### Known Stubs
-
-- **`get_current_user()`** (`app/dependencies.py`) is **not real authentication**. It always returns the seeded `test@creighton.edu` user regardless of any request credentials — it does not check tokens, headers, or sessions. It exists so routes can depend on "the current user" via FastAPI dependency injection before real auth exists. Token verification itself now exists (`app/auth.py`, see Authentication above). E1.5 (SCRUM-28) replaces this stub with the real dependency, which calls `verify_token`, with the same function signature, so no route using it will need to change (see the `TODO(E1.5)` comment in the code).
 
 ### Getting your Supabase credentials
 
