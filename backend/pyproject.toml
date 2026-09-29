@@ -8,3 +8,6 @@ line-length = 100
 # because line length isn't being enforced by a formatter yet either.
 select = ["E", "F"]
 ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

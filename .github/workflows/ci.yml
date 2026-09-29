@@ -24,6 +24,13 @@ jobs:
 
       - run: ruff check .
 
+      - name: Run backend tests
+        run: pytest
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          SUPABASE_URL: https://ci.supabase.co
+          SUPABASE_ANON_KEY: ci-key
+
       - name: Confirm the app imports without error
         run: python -c "from app.main import app"
         env:

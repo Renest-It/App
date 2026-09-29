@@ -6,3 +6,6 @@ psycopg2-binary==2.9.9
 pydantic-settings==2.5.2
 python-dotenv==1.0.1
 ruff==0.16.8
+PyJWT[crypto]==2.15.0
+pytest==9.1.1
+httpx==0.28.1
