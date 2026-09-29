@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import { GuestOnly } from "./auth/GuestOnly";
+import { RequireAuth } from "./auth/RequireAuth";
 import { AppShell } from "./components/AppShell";
 import { AccountPage } from "./pages/AccountPage";
 import { CheckEmailPage } from "./pages/CheckEmailPage";
@@ -31,11 +32,15 @@ export const router = createBrowserRouter([
   { path: "/check-email", element: <CheckEmailPage /> },
   // Where verification-email links land (see confirmRedirectUrl in auth/AuthProvider.tsx).
   { path: "/auth/confirm", element: <ConfirmPage /> },
-  // Every in-app page is a child of this route. E1.6's route protection wraps <AppShell />
-  // here, once, instead of each page.
+  // Every in-app page is a child of this route, and RequireAuth makes all of them login-only
+  // (including pages added later). Logged-out visitors go to /login?next=<path>.
   {
     path: "/",
-    element: <AppShell />,
+    element: (
+      <RequireAuth>
+        <AppShell />
+      </RequireAuth>
+    ),
     children: [
       { index: true, element: <ListPage /> },
       { path: "sell", element: <NewListingPage /> },

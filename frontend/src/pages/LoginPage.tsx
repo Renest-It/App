@@ -1,19 +1,28 @@
 import type { AuthError } from "@supabase/supabase-js";
 import { useRef, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { Alert } from "../components/Alert";
 import { AuthLayout } from "../components/AuthLayout";
 import { Button } from "../components/Button";
 import { TextField } from "../components/TextField";
 import { TextLink } from "../components/TextLink";
-import { authErrorMessage } from "../auth/errorMessages";
+import { LOGIN_REASON_BANNERS, authErrorMessage } from "../auth/errorMessages";
 import { startPendingSignup } from "../auth/pendingSignup";
+import { safeNext } from "../auth/safeNext";
 import { useAuth } from "../auth/useAuth";
 import { normalizeEmail } from "../auth/validation";
 
 export function LoginPage() {
   const { signIn, resend } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  // Where to go after logging in: the page they were headed to, if it's a safe in-app path.
+  const next = safeNext(params.get("next"));
+  // Why they're here, if the app signed them out (expired session, blocked account).
+  // (Own keys only, so ?reason=constructor can't pick up a built-in object property.)
+  const reason = params.get("reason");
+  const reasonBanner =
+    reason && Object.hasOwn(LOGIN_REASON_BANNERS, reason) ? LOGIN_REASON_BANNERS[reason] : null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [attempted, setAttempted] = useState(false);
@@ -47,7 +56,7 @@ export function LoginPage() {
       setError(error);
       return;
     }
-    navigate("/", { replace: true });
+    navigate(next ?? "/", { replace: true });
   }
 
   async function handleResend() {
@@ -67,6 +76,10 @@ export function LoginPage() {
 
   return (
     <AuthLayout title="Log in to your account" subtitle="Welcome back to ReNest">
+      {/* A login error replaces the "why you're here" banner. */}
+      {!error && reasonBanner && (
+        <Alert variant={reasonBanner.variant}>{reasonBanner.message}</Alert>
+      )}
       {error && (
         <div className="flex flex-col gap-3">
           <Alert>{authErrorMessage(error)}</Alert>
@@ -108,7 +121,10 @@ export function LoginPage() {
             Log in
           </Button>
           <p className="-my-3 flex items-center gap-1 text-sm text-text-muted">
-            Don't have an account? <TextLink to="/signup">Sign up</TextLink>
+            Don't have an account?{" "}
+            <TextLink to={next ? `/signup?${new URLSearchParams({ next })}` : "/signup"}>
+              Sign up
+            </TextLink>
           </p>
         </div>
       </form>
