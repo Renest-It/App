@@ -57,7 +57,35 @@ The same three `VITE_` variables are set in the Vercel project for **Production*
 
 ### Auth in the frontend
 
-Use `useAuth()` from `src/auth/useAuth.ts` for anything auth-related. It returns `session`, `user`, `loading`, `signUp`, `signIn`, and `signOut`. The actions return `{ error }` instead of throwing. Wait for `loading` to be `false` before treating a `null` user as logged out, or the page will flash the logged-out view on reload. `src/lib/supabase.ts` is the only Supabase client; import it rather than calling `createClient` anywhere else.
+Use `useAuth()` from `src/auth/useAuth.ts` for anything auth-related. It returns:
+
+- `session`, `user`, `loading`: wait for `loading` to be `false` before treating a `null` user as logged out, or the page will flash the logged-out view on reload.
+- `signUp(email, password, displayName)`: the display name is stored in the Supabase user's metadata as `user.user_metadata.display_name`, which is where the backend reads it when it creates the user's row (SCRUM-28).
+- `signIn(email, password)`, `signOut()`
+- `resend(email)`: re-sends the verification email.
+
+The actions return `{ error }` instead of throwing. Turn an error into user-facing text with `authErrorMessage(error)` from `src/auth/errorMessages.ts`. Never show Supabase's `error.message` to users.
+
+Other pieces:
+
+- `src/lib/supabase.ts` is the only Supabase client; import it rather than calling `createClient` anywhere else.
+- `useLogout()` (`src/auth/useLogout.ts`) signs out and goes to `/login`. The Account tab's log-out button should use it.
+- `<GuestOnly>` (`src/auth/GuestOnly.tsx`) wraps pages only signed-out visitors should see. Signed-in users are sent to Home.
+- `PASSWORD_MIN_LENGTH` in `src/auth/validation.ts` must match Supabase → Authentication → Sign In / Providers → Email → "Minimum password length" (currently **6**). Change both together.
+- On page load, a saved session is checked with Supabase. If the account was deleted, the session is cleared, so you aren't stuck "logged in" as a user that no longer exists.
+
+| Route | Page |
+|---|---|
+| `/signup` | Sign up (display name, Creighton email, password). Signed-in users are redirected. |
+| `/login` | Log in. Signed-in users are redirected. |
+| `/check-email` | "Check your email", with a 60-second resend cooldown that survives a reload |
+| `/auth/confirm` | Where verification links land: "You're verified!" or "Link expired" (with resend) |
+
+The `@creighton.edu` check on the sign-up form is for user experience only. The backend enforces the domain (SCRUM-27, ADR 0006).
+
+### Styling
+
+Tailwind CSS v4 (see [ADR 0008](docs/decisions/0008-styling.md)). Design values from Figma live in the `@theme` block in `src/index.css`, with colors named by job (`bg-surface`, `text-text-muted`, `bg-accent`, `border-danger`, …). Build pages from the shared components in `src/components/` (`Button`, `TextField`, `Alert`, `AuthLayout`, `TextLink`), and don't use raw hex colors or `[#…]` arbitrary colors in components or pages. If Figma introduces a new value, add it to the theme.
 
 ## Auth & Email Setup (Supabase dashboard)
 
