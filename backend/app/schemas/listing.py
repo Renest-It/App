@@ -1,24 +1,34 @@
 from datetime import datetime
+from typing import Annotated
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.schemas.category import CategoryOut
 
+# The validation rules from docs/api/listings.md. The frontend form enforces the same ones.
+TITLE_MIN = 3
+TITLE_MAX = 80
+DESCRIPTION_MAX = 2000
+PRICE_MAX_CENTS = 1_000_000  # $10,000
+MAX_PHOTOS = 6
+
 
 class ListingCreate(BaseModel):
-    title: str = Field(min_length=1)
-    description: str | None = None
-    price_cents: int = Field(ge=0)
+    # Trimmed first, then length-checked.
+    title: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=TITLE_MIN, max_length=TITLE_MAX)
+    ]
+    description: Annotated[
+        str, StringConstraints(strip_whitespace=True, max_length=DESCRIPTION_MAX)
+    ] | None = None
+    price_cents: int = Field(ge=0, le=PRICE_MAX_CENTS)
     category_id: int
 
-    @field_validator("title")
+    @field_validator("description")
     @classmethod
-    def title_must_not_be_blank(cls, value: str) -> str:
-        stripped = value.strip()
-        if not stripped:
-            raise ValueError("title must not be empty or whitespace-only")
-        return stripped
+    def empty_description_is_none(cls, value: str | None) -> str | None:
+        return value or None
 
 
 class ListingCreateResponse(BaseModel):
@@ -34,11 +44,37 @@ class ListingCreateResponse(BaseModel):
 
 
 class ListingListItem(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: UUID
     title: str
     description: str | None
     price_cents: int
     category: CategoryOut
+    cover_image_url: str | None  # the position-0 photo; None if there isn't one
+    created_at: datetime
+
+
+class ListingImageOut(BaseModel):
+    id: UUID
+    position: int
+    url: str
+
+
+class SellerOut(BaseModel):
+    """The seller as shown on a listing. Never add email here (docs/api/listings.md)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    display_name: str | None
+
+
+class ListingDetail(BaseModel):
+    id: UUID
+    title: str
+    description: str | None
+    price_cents: int
+    status: str
+    category: CategoryOut
+    seller: SellerOut
+    images: list[ListingImageOut]  # sorted by position
     created_at: datetime

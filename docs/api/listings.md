@@ -139,9 +139,9 @@ Creates a **draft** listing owned by the current user. Drafts never appear in `G
 | `422` | *(FastAPI `detail`)* | Body fails the [validation rules](#validation-rules) |
 | `422` | `unknown_category` | `category_id` doesn't exist |
 
-> **Transition note:** On `main` today, this endpoint creates an `active` listing, and
-> `NewListingPage` depends on that. It switches to creating drafts in **E2.2**, together with
-> the publish endpoint, so listings never become impossible to publish in between.
+> **Transition note:** Since E2.2, this endpoint creates drafts. E0's old create page
+> (`NewListingPage`) can't publish them, so listings made with it never appear in the feed.
+> That's expected: E2.7 replaces that page.
 
 ## `POST /listings/{id}/images/upload-url`
 
@@ -229,6 +229,9 @@ Makes a draft **active**, so it appears in `GET /listings`. There's no request b
 | `404` | `listing_not_found` | No such listing, or someone else's draft |
 | `409` | `already_published` | The listing's status is already `active` or `sold` |
 | `422` | `no_images` | The draft has no photos |
+| `422` | `invalid_listing` | The draft no longer passes the [validation rules](#validation-rules) (e.g. its category was deleted). `message` says what to fix. |
+
+Publishing re-checks every validation rule before switching the status.
 
 ## `GET /listings/{id}`
 

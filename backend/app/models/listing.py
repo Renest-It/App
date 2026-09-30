@@ -40,6 +40,7 @@ class Listing(Base):
     updated_at = Column(DateTime(timezone=True), nullable=True)
 
     category = relationship("Category")
+    seller = relationship("User")
     images = relationship(
         "ListingImage",
         order_by="ListingImage.position",
