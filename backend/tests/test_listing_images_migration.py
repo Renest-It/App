@@ -84,7 +84,8 @@ def test_position_must_be_0_to_5(db_session, listing, position):
 def test_deleting_a_listing_deletes_its_images(db_session, listing):
     add_image(db_session, listing.id, 0)
     add_image(db_session, listing.id, 1)
+    listing_id = listing.id  # read before the row is gone; the ORM can't reload it after
     # Raw SQL, so the database's ON DELETE CASCADE does the work, not the ORM.
-    db_session.execute(text("DELETE FROM listings WHERE id = :id"), {"id": listing.id})
+    db_session.execute(text("DELETE FROM listings WHERE id = :id"), {"id": listing_id})
     db_session.commit()
-    assert image_count(db_session, listing.id) == 0
+    assert image_count(db_session, listing_id) == 0
