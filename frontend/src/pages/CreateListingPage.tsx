@@ -10,6 +10,7 @@ import { TextField } from "../components/TextField";
 import type { Category } from "../api/types";
 import { PhotoPicker } from "../listings/PhotoPicker";
 import { usePhotoPicker } from "../listings/usePhotoPicker";
+import { usePublishListing } from "../listings/usePublishListing";
 import {
   DESCRIPTION_MAX,
   parsePriceCents,
@@ -22,33 +23,19 @@ type CategoriesState =
   | { status: "error"; message: string }
   | { status: "loaded"; categories: Category[] };
 
-export type PublishData = {
-  title: string;
-  description: string | null;
-  price_cents: number;
-  category_id: number;
-  photos: File[];
-};
-
-type CreateListingPageProps = {
-  // E2.5 supplies the real publish flow (draft → upload photos → publish) and E2.7 wires
-  // this page into the app with it. Until then, Publish shows what it would have sent.
-  onPublish?: (data: PublishData) => Promise<void>;
-};
-
-// The page layout, form fields, and photo picker for creating a listing (E2.4). Validates
-// client-side against the same rules as the backend (docs/api/listings.md). Submitting
-// a photo to storage, creating the draft, and publishing it is E2.5's job — see onPublish.
-export function CreateListingPage({ onPublish }: CreateListingPageProps) {
+// The page layout, form fields, photo picker, and publish flow for creating a listing
+// (E2.4 + E2.5). Validates client-side against the same rules as the backend
+// (docs/api/listings.md), then creates the draft, uploads each photo, and publishes it
+// (usePublishListing — see ADR 0009). E2.7 wires this page into the app's real /sell route.
+export function CreateListingPage() {
   const [categoriesState, setCategoriesState] = useState<CategoriesState>({ status: "loading" });
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
-  const [publishing, setPublishing] = useState(false);
-  const [publishError, setPublishError] = useState<string | null>(null);
   const { photos, addPhotos, removePhoto } = usePhotoPicker();
+  const { publish, isPublishing, error: publishError, photoStatuses } = usePublishListing();
 
   useEffect(() => {
     getCategories()
@@ -72,7 +59,6 @@ export function CreateListingPage({ onPublish }: CreateListingPageProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAttemptedSubmit(true);
-    setPublishError(null);
 
     const fieldErrors = validateListingForm({ title, price, categoryId });
     if (Object.keys(fieldErrors).length > 0) return;
@@ -80,26 +66,15 @@ export function CreateListingPage({ onPublish }: CreateListingPageProps) {
     const priceCents = parsePriceCents(price);
     if (priceCents === null || !categoryId) return; // unreachable: validateListingForm covers both
 
-    const data: PublishData = {
-      title: title.trim(),
-      description: description.trim() || null,
-      price_cents: priceCents,
-      category_id: Number(categoryId),
-      photos: photos.map((p) => p.file),
-    };
-
-    if (!onPublish) {
-      // No E2.5 hook wired up yet — this is what Publish will send once it is.
-      setPublishError(
-        `Not wired up yet (E2.5/E2.7): would publish "${data.title}", ${data.photos.length} photo(s).`,
-      );
-      return;
-    }
-
-    setPublishing(true);
-    onPublish(data)
-      .catch((e) => setPublishError(e instanceof Error ? e.message : "Something went wrong"))
-      .finally(() => setPublishing(false));
+    void publish(
+      {
+        title: title.trim(),
+        description: description.trim() || null,
+        price_cents: priceCents,
+        category_id: Number(categoryId),
+      },
+      photos.map((p) => ({ id: p.id, file: p.file })),
+    );
   }
 
   return (
@@ -168,7 +143,13 @@ export function CreateListingPage({ onPublish }: CreateListingPageProps) {
 
         {/* Desktop: photos on the left. */}
         <div className="lg:w-80 lg:shrink-0">
-          <PhotoPicker photos={photos} onAdd={addPhotos} onRemove={removePhoto} />
+          <PhotoPicker
+            photos={photos}
+            onAdd={addPhotos}
+            onRemove={removePhoto}
+            statuses={photoStatuses}
+            disabled={isPublishing}
+          />
         </div>
       </div>
 
@@ -181,7 +162,7 @@ export function CreateListingPage({ onPublish }: CreateListingPageProps) {
           "pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:static lg:border-0 lg:bg-transparent lg:p-0"
         }
       >
-        <Button type="submit" loading={publishing} className="lg:max-w-xs">
+        <Button type="submit" loading={isPublishing} className="lg:max-w-xs">
           Publish listing
         </Button>
       </div>
