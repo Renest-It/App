@@ -13,10 +13,20 @@ import { router } from "./router";
 // When the API rejects the session (expired, blocked account), sign out and go to log in.
 setAuthFailureHandler((reason) => handleAuthFailure(reason, router));
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
-  </StrictMode>,
-);
+// VITE_USE_MOCKS=true serves E2's API from MSW (src/mocks/) instead of the real backend.
+// The dynamic import keeps MSW out of builds that don't use it.
+async function startMocks() {
+  if (import.meta.env.VITE_USE_MOCKS !== "true") return;
+  const { worker } = await import("./mocks/browser");
+  await worker.start({ onUnhandledFrame: "bypass" });
+}
+
+startMocks().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </StrictMode>,
+  );
+});

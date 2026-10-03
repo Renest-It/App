@@ -18,7 +18,7 @@ from app.db import Base
 class Listing(Base):
     __tablename__ = "listings"
     __table_args__ = (
-        CheckConstraint("status IN ('active', 'sold')", name="ck_listings_status"),
+        CheckConstraint("status IN ('draft', 'active', 'sold')", name="ck_listings_status"),
     )
 
     id = Column(
@@ -40,3 +40,9 @@ class Listing(Base):
     updated_at = Column(DateTime(timezone=True), nullable=True)
 
     category = relationship("Category")
+    images = relationship(
+        "ListingImage",
+        order_by="ListingImage.position",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
