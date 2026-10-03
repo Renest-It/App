@@ -1,5 +1,16 @@
 import { supabase } from "../lib/supabase";
-import type { Category, CreatedListing, CurrentUser, Listing, ListingCreate } from "./types";
+import type {
+  Category,
+  CreatedListing,
+  CurrentUser,
+  ImageContentType,
+  ImageUploadUrl,
+  Listing,
+  ListingCreate,
+  ListingDetail,
+  ListingImage,
+  ListingImageCreate,
+} from "./types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -98,3 +109,24 @@ export const createListing = (data: ListingCreate) =>
   });
 
 export const getMe = () => request<CurrentUser>("/me");
+
+// --- E2: listing creation (see docs/api/listings.md) ---
+
+export const getListing = (id: string) => request<ListingDetail>(`/listings/${id}`);
+
+export const createImageUploadUrl = (listingId: string, contentType: ImageContentType) =>
+  request<ImageUploadUrl>(`/listings/${listingId}/images/upload-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content_type: contentType }),
+  });
+
+export const addListingImage = (listingId: string, data: ListingImageCreate) =>
+  request<ListingImage>(`/listings/${listingId}/images`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+export const publishListing = (listingId: string) =>
+  request<ListingDetail>(`/listings/${listingId}/publish`, { method: "POST" });
