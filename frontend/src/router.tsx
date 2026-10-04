@@ -5,6 +5,8 @@ import { AppShell } from "./components/AppShell";
 import { AccountPage } from "./pages/AccountPage";
 import { CheckEmailPage } from "./pages/CheckEmailPage";
 import { ConfirmPage } from "./pages/ConfirmPage";
+import { CreateListingPage } from "./pages/CreateListingPage";
+import { ComponentGallery } from "./pages/dev/ComponentGallery";
 import { ListPage } from "./pages/ListPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NewListingPage } from "./pages/NewListingPage";
@@ -47,6 +49,10 @@ export const router = createBrowserRouter([
       // Old create-listing URL, kept working for bookmarks.
       { path: "new", element: <Navigate to="/sell" replace /> },
       { path: "account", element: <AccountPage /> },
+      // Dev-only preview routes for E2.4 review (SCRUM-35). Not linked from the app's nav.
+      // E2.7 decides the real /sell route and when NewListingPage is replaced with this page.
+      { path: "dev/components", element: <ComponentGallery /> },
+      { path: "dev/create-listing", element: <CreateListingPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
