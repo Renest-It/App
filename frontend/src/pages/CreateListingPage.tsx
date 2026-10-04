@@ -49,7 +49,7 @@ export function CreateListingPage() {
   }, []);
 
   const errors: FieldErrors = attemptedSubmit
-    ? validateListingForm({ title, price, categoryId })
+    ? validateListingForm({ title, price, categoryId, photoCount: photos.length })
     : {};
   const selectedCategory =
     categoriesState.status === "loaded"
@@ -60,7 +60,12 @@ export function CreateListingPage() {
     event.preventDefault();
     setAttemptedSubmit(true);
 
-    const fieldErrors = validateListingForm({ title, price, categoryId });
+    const fieldErrors = validateListingForm({
+      title,
+      price,
+      categoryId,
+      photoCount: photos.length,
+    });
     if (Object.keys(fieldErrors).length > 0) return;
 
     const priceCents = parsePriceCents(price);
@@ -149,6 +154,7 @@ export function CreateListingPage() {
             onRemove={removePhoto}
             statuses={photoStatuses}
             disabled={isPublishing}
+            error={errors.photos}
           />
         </div>
       </div>

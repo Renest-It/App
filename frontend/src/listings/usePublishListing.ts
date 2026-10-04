@@ -28,8 +28,14 @@ const MAX_CONCURRENT_UPLOADS = 2;
 // The real publish flow (E2.5, see ADR 0009 and docs/api/listings.md → "The publish flow, end
 // to end"): create a draft, upload each photo (resized/re-encoded first), register it, then
 // publish. The draft id and each photo's success are remembered across calls, so if `publish`
-// is called again after a partial failure (same photos, same ids) it only retries what didn't
-// already finish — it never creates a second draft or re-uploads a photo that's already done.
+// is called again with the EXACT SAME form values and photos (a true retry after a failure) it
+// only retries what didn't already finish — it never creates a second draft or re-uploads a
+// photo that's already done. But if anything changed since the last attempt — a field edited,
+// a photo added/removed/reordered — that memory is stale and gets thrown away first: the old
+// draft is abandoned (harmless, it's only ever visible to its seller — ADR 0009) and the next
+// Publish starts a fresh one with the current values and positions 0..n. Without this, a retry
+// after an edit could publish stale field values, leave a removed photo attached, or collide on
+// a photo position another photo already holds (caught in review — see PR #26).
 export function usePublishListing() {
   const navigate = useNavigate();
   const [photoStatuses, setPhotoStatuses] = useState<Record<string, PhotoStatus>>({});
@@ -39,10 +45,19 @@ export function usePublishListing() {
   const draftIdRef = useRef<string | null>(null);
   const donePhotoIdsRef = useRef<Set<string>>(new Set());
   const unsupportedPhotoIdsRef = useRef<Set<string>>(new Set());
+  const lastAttemptKeyRef = useRef<string | null>(null);
 
   useBeforeUnloadWarning(isPublishing);
 
   async function publish(form: ListingFormData, photos: PublishPhoto[]) {
+    const attemptKey = JSON.stringify({ form, photoIds: photos.map((p) => p.id) });
+    if (attemptKey !== lastAttemptKeyRef.current) {
+      draftIdRef.current = null;
+      donePhotoIdsRef.current = new Set();
+      unsupportedPhotoIdsRef.current = new Set();
+      lastAttemptKeyRef.current = attemptKey;
+    }
+
     setError(null);
     setIsPublishing(true);
     setPhotoStatuses((current) => {
