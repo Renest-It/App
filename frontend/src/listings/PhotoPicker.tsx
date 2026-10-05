@@ -1,17 +1,28 @@
-import { Camera, X } from "lucide-react";
+import { Camera, Check, CircleAlert, LoaderCircle, X } from "lucide-react";
 import { useId, useRef } from "react";
 import { MAX_PHOTOS } from "./validation";
 import type { PickedPhoto } from "./usePhotoPicker";
+import type { PhotoStatus } from "./usePublishListing";
 
 type PhotoPickerProps = {
   photos: PickedPhoto[];
   onAdd: (files: File[]) => void;
   onRemove: (id: string) => void;
   error?: string;
+  // Set only while publishing (E2.5) — each photo's upload progress, keyed by PickedPhoto id.
+  statuses?: Record<string, PhotoStatus>;
+  disabled?: boolean;
 };
 
-// Display only: picks files and shows thumbnails. E2.5 resizes, re-encodes, and uploads them.
-export function PhotoPicker({ photos, onAdd, onRemove, error }: PhotoPickerProps) {
+// Picks files, shows thumbnails, and — while publishing — each photo's upload status.
+export function PhotoPicker({
+  photos,
+  onAdd,
+  onRemove,
+  error,
+  statuses,
+  disabled = false,
+}: PhotoPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const errorId = `${inputId}-error`;
@@ -39,33 +50,66 @@ export function PhotoPicker({ photos, onAdd, onRemove, error }: PhotoPickerProps
         className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3"
         aria-describedby={error ? errorId : undefined}
       >
-        {photos.map((photo, index) => (
-          <div key={photo.id} className="relative aspect-square overflow-hidden rounded-md">
-            <img
-              src={photo.previewUrl}
-              alt={index === 0 ? "Cover photo" : `Photo ${index + 1}`}
-              className="h-full w-full object-cover"
-            />
-            {index === 0 && (
-              <span className="absolute top-1 left-1 rounded-sm bg-text/70 px-1.5 py-0.5 text-xs font-semibold text-surface">
-                Cover
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => onRemove(photo.id)}
-              aria-label={`Remove photo ${index + 1}`}
-              className={
-                "absolute top-1 right-1 flex size-11 items-center justify-center rounded-full " +
-                "bg-text/70 text-surface focus-visible:outline-2 focus-visible:outline-offset-2 " +
-                "focus-visible:outline-accent"
-              }
-            >
-              <X aria-hidden className="size-4" />
-            </button>
-          </div>
-        ))}
-        {!atMax && (
+        {photos.map((photo, index) => {
+          const status = statuses?.[photo.id];
+          return (
+            <div key={photo.id} className="relative aspect-square overflow-hidden rounded-md">
+              <img
+                src={photo.previewUrl}
+                alt={index === 0 ? "Cover photo" : `Photo ${index + 1}`}
+                className="h-full w-full object-cover"
+              />
+              {index === 0 && (
+                <span className="absolute top-1 left-1 rounded-sm bg-text/70 px-1.5 py-0.5 text-xs font-semibold text-surface">
+                  Cover
+                </span>
+              )}
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={() => onRemove(photo.id)}
+                  aria-label={`Remove photo ${index + 1}`}
+                  className={
+                    "absolute top-1 right-1 flex size-11 items-center justify-center rounded-full " +
+                    "bg-text/70 text-surface focus-visible:outline-2 focus-visible:outline-offset-2 " +
+                    "focus-visible:outline-accent"
+                  }
+                >
+                  <X aria-hidden className="size-4" />
+                </button>
+              )}
+              {status && status !== "waiting" && (
+                <span
+                  className={
+                    "absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 py-1 " +
+                    "text-xs font-semibold text-surface " +
+                    (status === "failed" ? "bg-danger/85" : "bg-text/70")
+                  }
+                >
+                  {status === "uploading" && (
+                    <>
+                      <LoaderCircle aria-hidden className="size-3.5 animate-spin" />
+                      Uploading
+                    </>
+                  )}
+                  {status === "done" && (
+                    <>
+                      <Check aria-hidden className="size-3.5" />
+                      Done
+                    </>
+                  )}
+                  {status === "failed" && (
+                    <>
+                      <CircleAlert aria-hidden className="size-3.5" />
+                      Failed
+                    </>
+                  )}
+                </span>
+              )}
+            </div>
+          );
+        })}
+        {!atMax && !disabled && (
           <label
             htmlFor={inputId}
             className={
@@ -86,6 +130,7 @@ export function PhotoPicker({ photos, onAdd, onRemove, error }: PhotoPickerProps
         accept="image/*"
         multiple
         onChange={handleChange}
+        disabled={disabled}
         className="sr-only"
       />
       <span className="text-caption text-text-placeholder">

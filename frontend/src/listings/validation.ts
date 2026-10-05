@@ -12,6 +12,7 @@ export type FieldErrors = {
   title?: string;
   price?: string;
   category?: string;
+  photos?: string;
 };
 
 // Dollars-as-typed ("45", "12.50", "") → cents, or null if it isn't a valid non-negative amount.
@@ -40,17 +41,24 @@ export function validateCategory(categoryId: string): string | undefined {
   return categoryId === "" ? "Choose a category." : undefined;
 }
 
+export function validatePhotos(photoCount: number): string | undefined {
+  return photoCount === 0 ? "Add at least one photo." : undefined;
+}
+
 export function validateListingForm(fields: {
   title: string;
   price: string;
   categoryId: string;
+  photoCount: number;
 }): FieldErrors {
   const errors: FieldErrors = {};
   const title = validateTitle(fields.title);
   const price = validatePrice(fields.price);
   const category = validateCategory(fields.categoryId);
+  const photos = validatePhotos(fields.photoCount);
   if (title) errors.title = title;
   if (price) errors.price = price;
   if (category) errors.category = category;
+  if (photos) errors.photos = photos;
   return errors;
 }
