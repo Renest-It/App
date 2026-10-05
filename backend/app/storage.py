@@ -22,6 +22,8 @@ def _storage_url(path: str) -> str:
 
 def _service_headers() -> dict[str, str]:
     key = settings.supabase_service_role_key
+    if not key:
+        raise StorageUnavailable("SUPABASE_SERVICE_ROLE_KEY isn't set")
     return {"Authorization": f"Bearer {key}", "apikey": key}
 
 
