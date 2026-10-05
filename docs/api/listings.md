@@ -180,7 +180,7 @@ extension (`jpg`, `png`, `webp`).
 | `404` | `listing_not_found` | No such listing, or someone else's draft |
 | `409` | `listing_not_draft` | The listing is already published (photos can only be added to drafts in E2) |
 | `422` | `unsupported_content_type` | `content_type` isn't jpeg, png, or webp |
-| `503` | `storage_unavailable` | Supabase Storage couldn't be reached. Retry shortly. |
+| `503` | `storage_unavailable` | Supabase Storage couldn't be reached, or the backend's storage key isn't configured. Retry shortly. |
 
 ## `POST /listings/{id}/images`
 
@@ -216,7 +216,7 @@ Records a photo that was uploaded to `storage_path`, at a position in the listin
 | `422` | *(FastAPI `detail`)* | `position` outside 0–5, or a missing field |
 | `422` | `invalid_storage_path` | `storage_path` isn't exactly `listings/{id}/{uuid}.{ext}` for this listing |
 | `422` | `upload_not_found` | Nothing has been uploaded at `storage_path` yet |
-| `503` | `storage_unavailable` | Supabase Storage couldn't be reached to check the upload. Retry shortly. |
+| `503` | `storage_unavailable` | Supabase Storage couldn't be reached to check the upload, or the backend's storage key isn't configured. Retry shortly. |
 
 ## `POST /listings/{id}/publish`
 

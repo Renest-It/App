@@ -5,8 +5,9 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_anon_key: str
     # Server-only secret: signs photo upload URLs and checks uploads exist (ADR 0009). Never
-    # send it to the frontend or log it.
-    supabase_service_role_key: str
+    # send it to the frontend or log it. Optional until it's configured: while it's empty, the
+    # photo endpoints return 503 storage_unavailable (see CLAUDE.md).
+    supabase_service_role_key: str = ""
     environment: str = "development"
     frontend_origin: str = ""
     frontend_preview_origin_regex: str = r"^https://renest-[a-z0-9-]+\.vercel\.app$"

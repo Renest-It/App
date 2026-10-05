@@ -78,3 +78,12 @@ def test_object_exists_failures_are_storage_unavailable(calls, answer):
     calls.responses["HEAD"] = answer
     with pytest.raises(storage.StorageUnavailable):
         storage.object_exists(PATH)
+
+
+def test_missing_service_role_key_is_storage_unavailable(calls, monkeypatch):
+    monkeypatch.setattr(storage.settings, "supabase_service_role_key", "")
+    with pytest.raises(storage.StorageUnavailable):
+        storage.create_signed_upload_url(PATH)
+    with pytest.raises(storage.StorageUnavailable):
+        storage.object_exists(PATH)
+    assert calls == []
