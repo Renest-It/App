@@ -139,10 +139,6 @@ Creates a **draft** listing owned by the current user. Drafts never appear in `G
 | `422` | *(FastAPI `detail`)* | Body fails the [validation rules](#validation-rules) |
 | `422` | `unknown_category` | `category_id` doesn't exist |
 
-> **Transition note:** Since E2.2, this endpoint creates drafts. E0's old create page
-> (`NewListingPage`) can't publish them, so listings made with it never appear in the feed.
-> That's expected: E2.7 replaces that page.
-
 ## `POST /listings/{id}/images/upload-url`
 
 Returns a short-lived signed URL the browser uses to upload **one** photo straight to Supabase
