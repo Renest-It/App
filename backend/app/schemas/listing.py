@@ -78,3 +78,21 @@ class ListingDetail(BaseModel):
     seller: SellerOut
     images: list[ListingImageOut]  # sorted by position
     created_at: datetime
+
+
+class ImageUploadUrlRequest(BaseModel):
+    # Checked in the route, not here, so an unsupported type gets the contract's own
+    # `unsupported_content_type` code instead of FastAPI's generic 422.
+    content_type: str
+
+
+class ImageUploadUrlOut(BaseModel):
+    upload_url: str
+    storage_path: str
+    expires_in: int  # seconds
+
+
+class ListingImageCreate(BaseModel):
+    storage_path: str
+    # 0–5 plus the unique (listing_id, position) constraint is what caps a listing at 6 photos.
+    position: int = Field(ge=0, le=MAX_PHOTOS - 1)

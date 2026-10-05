@@ -30,6 +30,7 @@ if TEST_DATABASE_URL:
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL or "postgresql://test:test@localhost:5432/test"
 os.environ["SUPABASE_URL"] = "https://test-project.supabase.co"
 os.environ["SUPABASE_ANON_KEY"] = "test-anon-key"
+os.environ["SUPABASE_SERVICE_ROLE_KEY"] = "test-service-role-key"
 
 import json  # noqa: E402
 import socket  # noqa: E402
