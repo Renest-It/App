@@ -35,7 +35,8 @@ export function ListingCard({ listing }: ListingCardProps) {
       <div className="flex flex-col gap-1">
         <p className="truncate text-sm font-semibold text-text">{listing.title}</p>
         <div className="flex items-center justify-between gap-2">
-          <span className={`text-sm font-bold ${isFree ? "text-success" : "text-text"}`}>
+          <span className={`text-sm font-bold ${isFree ? "text-success" : "text-accent"}`}>
+            {" "}
             {isFree ? "Free" : formatPriceCents(listing.price_cents)}
           </span>
           <CategoryChip label={listing.category.name} />
