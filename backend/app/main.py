@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,6 +8,13 @@ from app.config import settings
 from app.errors import register_api_error_handlers
 from app.routers import categories, health, listings, me
 from app.users import register_user_error_handlers
+
+logger = logging.getLogger(__name__)
+
+if not settings.supabase_service_role_key:
+    logger.warning(
+        "SUPABASE_SERVICE_ROLE_KEY isn't set; photo uploads will return 503 until it is."
+    )
 
 app = FastAPI(title="ReNest API")
 register_auth_error_handlers(app)
