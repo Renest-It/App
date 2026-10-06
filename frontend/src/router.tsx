@@ -10,7 +10,6 @@ import { ComponentGallery } from "./pages/dev/ComponentGallery";
 import { ListingDetailPage } from "./pages/ListingDetailPage";
 import { ListPage } from "./pages/ListPage";
 import { LoginPage } from "./pages/LoginPage";
-import { NewListingPage } from "./pages/NewListingPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SignUpPage } from "./pages/SignUpPage";
 
@@ -47,14 +46,12 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <ListPage /> },
       { path: "listings/:id", element: <ListingDetailPage /> },
-      { path: "sell", element: <NewListingPage /> },
+      { path: "sell", element: <CreateListingPage /> },
       // Old create-listing URL, kept working for bookmarks.
       { path: "new", element: <Navigate to="/sell" replace /> },
       { path: "account", element: <AccountPage /> },
-      // Dev-only preview routes for E2.4 review (SCRUM-35). Not linked from the app's nav.
-      // E2.7 decides the real /sell route and when NewListingPage is replaced with this page.
+      // Dev-only preview route for E2.4 review (SCRUM-35). Not linked from the app's nav.
       { path: "dev/components", element: <ComponentGallery /> },
-      { path: "dev/create-listing", element: <CreateListingPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
