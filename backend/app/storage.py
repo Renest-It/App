@@ -67,3 +67,40 @@ def object_exists(storage_path: str) -> bool:
     if response.status_code in (400, 404):
         return False
     raise StorageUnavailable(f"Unexpected storage response: {response.status_code}")
+
+
+def delete_objects(storage_paths: list[str]) -> None:
+    """Remove these files from the bucket. Paths that don't exist are ignored by Supabase."""
+    if not storage_paths:
+        return
+    try:
+        # httpx.delete() can't send a body, and this endpoint takes the paths as JSON.
+        response = httpx.request(
+            "DELETE",
+            _storage_url(f"/object/{LISTING_PHOTOS_BUCKET}"),
+            headers=_service_headers(),
+            json={"prefixes": storage_paths},
+            timeout=_TIMEOUT,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as e:
+        raise StorageUnavailable("Could not delete from storage") from e
+
+
+def remove_folder(folder: str) -> None:
+    """Remove every file directly inside `folder` (e.g. `listings/{listing_id}`), including
+    photos that were uploaded but never recorded in listing_images."""
+    try:
+        response = httpx.post(
+            _storage_url(f"/object/list/{LISTING_PHOTOS_BUCKET}"),
+            headers=_service_headers(),
+            # A listing holds at most 6 recorded photos plus any abandoned uploads, so one page
+            # of 1,000 covers it.
+            json={"prefix": folder, "limit": 1000, "offset": 0},
+            timeout=_TIMEOUT,
+        )
+        response.raise_for_status()
+        names = [entry["name"] for entry in response.json()]
+    except (httpx.HTTPError, KeyError, TypeError, ValueError) as e:
+        raise StorageUnavailable("Could not list the folder in storage") from e
+    delete_objects([f"{folder}/{name}" for name in names])
