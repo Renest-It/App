@@ -187,15 +187,14 @@ extension (`jpg`, `png`, `webp`).
 |---|---|---|
 | `200` | — | URL issued |
 | `404` | `listing_not_found` | No such listing, or someone else's listing |
-| `409` | `listing_not_draft` | The listing is already published (photos can only be added to drafts in E2). **Changes in E3.3**, see below. |
+| `409` | `listing_sold` | The listing is sold, so its photos can't change |
 | `422` | `unsupported_content_type` | `content_type` isn't jpeg, png, or webp |
 | `503` | `storage_unavailable` | Supabase Storage couldn't be reached, or the backend's storage key isn't configured. Retry shortly. |
 
-**Changing in E3.3: "draft only" becomes "seller and not sold".** So sellers can add photos to
-a listing they've already published, this endpoint will accept any listing that isn't sold.
-For a sold listing it returns `409 listing_sold` (`listing_not_draft` goes away). Every other
-check stays exactly as it is: only the seller can call it, and the server picks the path inside
-this listing's own folder.
+**Drafts and active listings (since E3.3).** In E2 this only worked on drafts. Since E3.3 it
+works on any of the seller's listings that isn't sold, so photos can be added after publishing
+(`listing_not_draft` is gone). Every other check is unchanged: only the seller can call it, and
+the server picks the path inside this listing's own folder.
 
 ## `POST /listings/{id}/images`
 
@@ -225,17 +224,16 @@ Records a photo that was uploaded to `storage_path`, at a position in the listin
 | `201` | — | Image recorded |
 | `200` | — | Identical retry, returning the existing image |
 | `404` | `listing_not_found` | No such listing, or someone else's listing |
-| `409` | `listing_not_draft` | The listing is already published. **Changes in E3.3**, see below. |
+| `409` | `listing_sold` | The listing is sold, so its photos can't change |
 | `409` | `position_taken` | A *different* photo already has this position, or this photo is already recorded at a different position |
 | `422` | *(FastAPI `detail`)* | `position` outside 0–5, or a missing field |
 | `422` | `invalid_storage_path` | `storage_path` isn't exactly `listings/{id}/{uuid}.{ext}` for this listing |
 | `422` | `upload_not_found` | Nothing has been uploaded at `storage_path` yet |
 | `503` | `storage_unavailable` | Supabase Storage couldn't be reached to check the upload, or the backend's storage key isn't configured. Retry shortly. |
 
-**Changing in E3.3: "draft only" becomes "seller and not sold".** So sellers can add photos to
-a listing they've already published, this endpoint will accept any listing that isn't sold.
-For a sold listing it returns `409 listing_sold` (`listing_not_draft` goes away). Every other
-check stays exactly as it is: the path must be inside this listing's own folder, the file must
+**Drafts and active listings (since E3.3).** In E2 this only worked on drafts. Since E3.3 it
+works on any of the seller's listings that isn't sold (`listing_not_draft` is gone). Every
+other check is unchanged: the path must be inside this listing's own folder, the file must
 exist in storage before the row is written, and positions 0–5 still cap a listing at 6 photos.
 
 ## `POST /listings/{id}/publish`
@@ -490,7 +488,7 @@ What the create-listing page (E2.4/E2.5) does after the user clicks **Publish**:
 
 ## Editing photos on a published listing
 
-What the edit page (E3.4) does, once E3.3 relaxes the image endpoints:
+What the edit page (E3.4) does:
 
 - **Add a photo:** the same three steps as the publish flow above (upload URL, `PUT`, record),
   using the next free position, which is the number of photos the listing has now.
