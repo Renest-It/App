@@ -7,6 +7,7 @@ import { CheckEmailPage } from "./pages/CheckEmailPage";
 import { ConfirmPage } from "./pages/ConfirmPage";
 import { CreateListingPage } from "./pages/CreateListingPage";
 import { ComponentGallery } from "./pages/dev/ComponentGallery";
+import { EditListingPage } from "./pages/EditListingPage";
 import { ListingDetailPage } from "./pages/ListingDetailPage";
 import { ListPage } from "./pages/ListPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <ListPage /> },
       { path: "listings/:id", element: <ListingDetailPage /> },
+      { path: "listings/:id/edit", element: <EditListingPage /> },
       { path: "sell", element: <CreateListingPage /> },
       // Old create-listing URL, kept working for bookmarks.
       { path: "new", element: <Navigate to="/sell" replace /> },

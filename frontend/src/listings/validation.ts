@@ -1,4 +1,4 @@
-// Client-side checks for the create-listing form. These mirror the backend's rules exactly
+// Client-side checks for the listing form (create, and E3.4's edit). These mirror the backend's rules exactly
 // (docs/api/listings.md → Validation rules) so users rarely see the backend's own 422s.
 // If either side changes, change both — the contract doc is the source of truth.
 
@@ -20,6 +20,11 @@ export function parsePriceCents(value: string): number | null {
   const trimmed = value.trim();
   if (trimmed === "" || !/^\d+(\.\d{1,2})?$/.test(trimmed)) return null;
   return Math.round(Number(trimmed) * 100);
+}
+
+// The reverse, for pre-filling the edit form: 1500 → "15", 1250 → "12.50", 0 → "0".
+export function centsToPriceInput(cents: number): string {
+  return cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
 }
 
 export function validateTitle(title: string): string | undefined {
@@ -49,13 +54,14 @@ export function validateListingForm(fields: {
   title: string;
   price: string;
   categoryId: string;
-  photoCount: number;
+  // Omitted by the edit page, which keeps its photos within the rules as they're changed.
+  photoCount?: number;
 }): FieldErrors {
   const errors: FieldErrors = {};
   const title = validateTitle(fields.title);
   const price = validatePrice(fields.price);
   const category = validateCategory(fields.categoryId);
-  const photos = validatePhotos(fields.photoCount);
+  const photos = fields.photoCount === undefined ? undefined : validatePhotos(fields.photoCount);
   if (title) errors.title = title;
   if (price) errors.price = price;
   if (category) errors.category = category;
