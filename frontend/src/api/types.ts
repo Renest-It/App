@@ -1,6 +1,6 @@
 // Helps mirror the backend schema (see backend model: T0.8,
 // and the actual response shapes in backend schema: T0.9).
-// E2's listing shapes are defined in docs/api/listings.md.
+// E2's and E3's listing shapes are defined in docs/api/listings.md.
 
 export type ListingStatus = "draft" | "active" | "sold";
 
@@ -20,6 +20,11 @@ export interface Listing {
   // The photo at position 0, or null if the listing has none (e.g. listings from before E2).
   cover_image_url: string | null;
   created_at: string;
+}
+
+// What GET /listings/mine returns: the feed's shape, plus status (it includes drafts and sold).
+export interface MyListing extends Listing {
+  status: ListingStatus;
 }
 
 export interface ListingCreate {
@@ -63,7 +68,16 @@ export interface Seller {
   display_name: string | null;
 }
 
-// What GET /listings/{id} and POST /listings/{id}/publish return.
+// PATCH /listings/{id}: send only the fields that changed. description: null clears it.
+export interface ListingUpdate {
+  title?: string;
+  description?: string | null;
+  price_cents?: number;
+  category_id?: number;
+}
+
+// What GET /listings/{id}, PATCH /listings/{id}, and POST /listings/{id}/publish, /sold, and
+// /unsold return.
 export interface ListingDetail {
   id: string;
   title: string;

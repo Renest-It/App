@@ -48,3 +48,4 @@ the reasoning behind a decision that turned out to be temporary.
 | [0007](0007-authentication-and-identity.md) | Authentication and Identity |
 | [0008](0008-styling.md) | Styling with Tailwind CSS |
 | [0009](0009-listing-drafts-and-photo-storage.md) | Listing Drafts and Photo Storage |
+| [0010](0010-listing-management.md) | Listing Management: Edit, Delete, and Sold |
