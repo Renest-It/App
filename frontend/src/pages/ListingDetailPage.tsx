@@ -7,8 +7,11 @@ import type { ListingDetail } from "../api/types";
 import { Alert } from "../components/Alert";
 import { Button, ButtonLink } from "../components/Button";
 import { CategoryChip } from "../components/CategoryChip";
+import { CenterState } from "../components/CenterState";
+import { StatusBadge } from "../components/StatusBadge";
 import { useAuth } from "../auth/useAuth";
 import { PhotoGallery } from "../listings/PhotoGallery";
+import { SellerActions } from "../listings/SellerActions";
 import { formatRelativeTime } from "../listings/time";
 
 type LoadState =
@@ -18,9 +21,8 @@ type LoadState =
   | { status: "loaded"; listing: ListingDetail };
 
 // The listing detail page (E2.6). Loading placeholder, 404, retryable error, and the loaded
-// listing itself — photo gallery, price-or-Free, description, and the seller section. Seller
-// actions (E3) and the contact button (E6) only reserve their layout space here; those
-// tickets fill them in later.
+// listing itself — photo gallery, price-or-Free, description, and the seller section. The
+// owner gets E3.4's seller actions; the contact button (E6) only reserves its layout space.
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
   // Keyed by id: navigating to a different listing fully remounts this, which is what resets
@@ -35,14 +37,16 @@ function ListingDetailBody({ id }: { id?: string }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
-  // One-time "Your listing is live!" banner for a seller arriving right after publishing.
-  // Read once from navigation state, then immediately replaced out of history so a refresh
-  // (a fresh navigation entry with no state) doesn't show it again.
-  const [justPublished] = useState(
-    () => (location.state as { justPublished?: boolean } | null)?.justPublished === true,
-  );
+  // One-time banner for a seller arriving right after publishing ("Your listing is live!") or
+  // saving an edit ("Changes saved."). Read once from navigation state, then immediately
+  // replaced out of history so a refresh (a fresh navigation entry with no state) doesn't
+  // show it again.
+  const [arrivedFrom] = useState(() => {
+    const state = location.state as { justPublished?: boolean; justSaved?: boolean } | null;
+    return { published: state?.justPublished === true, saved: state?.justSaved === true };
+  });
   useEffect(() => {
-    if (justPublished) {
+    if (arrivedFrom.published || arrivedFrom.saved) {
       navigate(location.pathname, { replace: true });
     }
     // Only ever run once, right after mount — rerunning on navigate/location changes would
@@ -134,7 +138,8 @@ function ListingDetailBody({ id }: { id?: string }) {
       {listing.status === "draft" && (
         <Alert variant="info">This listing is a draft — only you can see it.</Alert>
       )}
-      {justPublished && <Alert variant="success">Your listing is live!</Alert>}
+      {arrivedFrom.published && <Alert variant="success">Your listing is live!</Alert>}
+      {arrivedFrom.saved && <Alert variant="success">Changes saved.</Alert>}
 
       <PhotoGallery images={listing.images} title={listing.title} />
 
@@ -146,6 +151,8 @@ function ListingDetailBody({ id }: { id?: string }) {
           </span>
         </div>
         <div className="flex items-center gap-3">
+          {/* The owner sees their listing's status; everyone sees that it's sold. */}
+          {(isOwner || listing.status === "sold") && <StatusBadge status={listing.status} />}
           <CategoryChip label={listing.category.name} />
           <span className="text-caption text-text-placeholder">
             Posted {formatRelativeTime(listing.created_at)}
@@ -169,8 +176,12 @@ function ListingDetailBody({ id }: { id?: string }) {
         </div>
       </div>
 
-      {/* Reserved for E3's seller actions (edit, delete, mark sold) — owner-only. */}
-      {isOwner && <div data-reserved-for="E3-seller-actions" />}
+      {isOwner && (
+        <SellerActions
+          listing={listing}
+          onChange={(updated) => setState({ status: "loaded", listing: updated })}
+        />
+      )}
 
       {/* Reserved for E6's contact button — shown to everyone except the owner. Pinned to
           the bottom on mobile, same pattern as CreateListingPage's Publish bar. */}
@@ -180,36 +191,6 @@ function ListingDetailBody({ id }: { id?: string }) {
           className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
         />
       )}
-    </div>
-  );
-}
-
-function CenterState({
-  icon,
-  title,
-  body,
-  danger = false,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-  danger?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
-      <div
-        className={
-          "flex size-14 items-center justify-center rounded-full " +
-          (danger ? "bg-danger-soft-strong text-danger" : "bg-accent-soft text-accent")
-        }
-      >
-        {icon}
-      </div>
-      <h1 className="font-display text-lg font-bold text-text">{title}</h1>
-      <p className="text-body max-w-xs text-text-muted">{body}</p>
-      {children}
     </div>
   );
 }
