@@ -1,60 +1,33 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { getCategories } from "../api/client";
+import { useState, type FormEvent } from "react";
 import { Alert } from "../components/Alert";
 import { Button } from "../components/Button";
-import { CategoryChip } from "../components/CategoryChip";
-import { PriceInput } from "../components/PriceInput";
-import { Select } from "../components/Select";
-import { Textarea } from "../components/Textarea";
-import { TextField } from "../components/TextField";
-import type { Category } from "../api/types";
+import { ListingFields, type ListingFieldValues } from "../listings/ListingFields";
 import { PhotoPicker } from "../listings/PhotoPicker";
+import { useCategories } from "../listings/useCategories";
 import { usePhotoPicker } from "../listings/usePhotoPicker";
 import { usePublishListing } from "../listings/usePublishListing";
-import {
-  DESCRIPTION_MAX,
-  parsePriceCents,
-  validateListingForm,
-  type FieldErrors,
-} from "../listings/validation";
-
-type CategoriesState =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "loaded"; categories: Category[] };
+import { parsePriceCents, validateListingForm, type FieldErrors } from "../listings/validation";
 
 // The page layout, form fields, photo picker, and publish flow for creating a listing
 // (E2.4 + E2.5). Validates client-side against the same rules as the backend
 // (docs/api/listings.md), then creates the draft, uploads each photo, and publishes it
 // (usePublishListing — see ADR 0009). E2.7 wires this page into the app's real /sell route.
 export function CreateListingPage() {
-  const [categoriesState, setCategoriesState] = useState<CategoriesState>({ status: "loading" });
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [categoryId, setCategoryId] = useState("");
+  const categories = useCategories();
+  const [values, setValues] = useState<ListingFieldValues>({
+    title: "",
+    description: "",
+    price: "",
+    categoryId: "",
+  });
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const { photos, addPhotos, removePhoto } = usePhotoPicker();
   const { publish, isPublishing, error: publishError, photoStatuses } = usePublishListing();
-
-  useEffect(() => {
-    getCategories()
-      .then((categories) => setCategoriesState({ status: "loaded", categories }))
-      .catch((e) =>
-        setCategoriesState({
-          status: "error",
-          message: e instanceof Error ? e.message : "Could not load categories",
-        }),
-      );
-  }, []);
+  const { title, description, price, categoryId } = values;
 
   const errors: FieldErrors = attemptedSubmit
     ? validateListingForm({ title, price, categoryId, photoCount: photos.length })
     : {};
-  const selectedCategory =
-    categoriesState.status === "loaded"
-      ? categoriesState.categories.find((c) => String(c.id) === categoryId)
-      : undefined;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,60 +64,14 @@ export function CreateListingPage() {
     >
       <h1 className="font-display text-2xl font-bold text-text">Sell an item</h1>
 
-      {categoriesState.status === "error" && (
-        <Alert variant="error">Could not load categories: {categoriesState.message}</Alert>
-      )}
-
       <div className="flex flex-col gap-6 lg:flex-row-reverse lg:items-start lg:gap-8">
         {/* Desktop: fields on the right (lg:flex-row-reverse above puts this first visually). */}
-        <div className="flex flex-1 flex-col gap-5">
-          <TextField
-            label="Title"
-            placeholder="e.g. Mini fridge, 3.2 cu ft"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            error={errors.title}
-          />
-          <Textarea
-            label="Description (optional)"
-            placeholder="Add details buyers would want to know — condition, dimensions, pickup times…"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            maxLength={DESCRIPTION_MAX}
-          />
-          <div className="flex gap-4">
-            <PriceInput
-              label="Price"
-              placeholder="0.00"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              error={errors.price}
-            />
-            {categoriesState.status === "loaded" ? (
-              <Select
-                label="Category"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                error={errors.category}
-              >
-                <option value="" disabled>
-                  Select a category
-                </option>
-                {categoriesState.categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </Select>
-            ) : (
-              <div className="flex w-full flex-col gap-2">
-                <span className="text-sm font-semibold text-text">Category</span>
-                <div className="h-12 w-full animate-pulse rounded-md bg-border" />
-              </div>
-            )}
-          </div>
-          {selectedCategory && <CategoryChip label={selectedCategory.name} />}
-        </div>
+        <ListingFields
+          values={values}
+          onChange={setValues}
+          errors={errors}
+          categories={categories}
+        />
 
         {/* Desktop: photos on the left. */}
         <div className="lg:w-80 lg:shrink-0">
