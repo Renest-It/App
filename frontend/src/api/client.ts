@@ -11,6 +11,7 @@ import type {
   ListingImage,
   ListingImageCreate,
   ListingUpdate,
+  MyListing,
 } from "./types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -146,6 +147,9 @@ export const updateListing = (listingId: string, data: ListingUpdate) =>
 
 export const deleteListing = (listingId: string) =>
   request<void>(`/listings/${listingId}`, { method: "DELETE" });
+
+// Your own listings, every status, newest first. The only endpoint that lists drafts.
+export const getMyListings = () => request<MyListing[]>("/listings/mine");
 
 export const markListingSold = (listingId: string) =>
   request<ListingDetail>(`/listings/${listingId}/sold`, { method: "POST" });

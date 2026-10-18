@@ -11,6 +11,7 @@ import { EditListingPage } from "./pages/EditListingPage";
 import { ListingDetailPage } from "./pages/ListingDetailPage";
 import { ListPage } from "./pages/ListPage";
 import { LoginPage } from "./pages/LoginPage";
+import { MyListingsPage } from "./pages/MyListingsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SignUpPage } from "./pages/SignUpPage";
 
@@ -52,6 +53,8 @@ export const router = createBrowserRouter([
       // Old create-listing URL, kept working for bookmarks.
       { path: "new", element: <Navigate to="/sell" replace /> },
       { path: "account", element: <AccountPage /> },
+      // Under /account so the Account nav item stays highlighted here (E3.5).
+      { path: "account/listings", element: <MyListingsPage /> },
       // Dev-only preview route for E2.4 review (SCRUM-35). Not linked from the app's nav.
       { path: "dev/components", element: <ComponentGallery /> },
       { path: "*", element: <NotFoundPage /> },

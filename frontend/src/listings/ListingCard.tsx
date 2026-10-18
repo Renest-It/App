@@ -1,10 +1,14 @@
 import { Link } from "react-router";
 import { formatPriceCents } from "../api/format";
-import type { Listing } from "../api/types";
+import type { Listing, ListingStatus } from "../api/types";
 import { CategoryChip } from "../components/CategoryChip";
+import { StatusBadge } from "../components/StatusBadge";
 
 type ListingCardProps = {
   listing: Listing;
+  // Shows a StatusBadge on the photo. Only My Listings (E3.5) passes it: the public feed is
+  // all active listings, so a badge there would say nothing.
+  status?: ListingStatus;
 };
 
 // A listing on the home grid (E2.7, matches the E2.0 mockup — see CategoryChip's own note that
@@ -12,7 +16,7 @@ type ListingCardProps = {
 // on `Listing`, the plain list-item shape: E4 reuses this same card inside its own grid
 // (masonry, filters, pagination), so nothing here assumes it's rendered inside ListPage's grid
 // specifically.
-export function ListingCard({ listing }: ListingCardProps) {
+export function ListingCard({ listing, status }: ListingCardProps) {
   const isFree = listing.price_cents === 0;
 
   return (
@@ -22,7 +26,7 @@ export function ListingCard({ listing }: ListingCardProps) {
     >
       {/* Same aspect ratio as the detail page's gallery (PhotoGallery), so a listing's cover
           photo looks like the same photo whether you're looking at the card or the page. */}
-      <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-border">
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-md bg-border">
         {listing.cover_image_url && (
           <img
             src={listing.cover_image_url}
@@ -30,6 +34,11 @@ export function ListingCard({ listing }: ListingCardProps) {
             loading="lazy"
             className="h-full w-full object-cover"
           />
+        )}
+        {status && (
+          <span className="absolute top-2 left-2">
+            <StatusBadge status={status} />
+          </span>
         )}
       </div>
       <div className="flex flex-col gap-1">
