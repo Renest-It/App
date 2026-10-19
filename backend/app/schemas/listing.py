@@ -79,6 +79,12 @@ class ListingListItem(BaseModel):
     created_at: datetime
 
 
+class MyListingItem(ListingListItem):
+    """GET /listings/mine: the feed's shape plus status, since it includes drafts and sold."""
+
+    status: str
+
+
 class ListingImageOut(BaseModel):
     id: UUID
     position: int

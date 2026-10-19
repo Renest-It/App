@@ -1,8 +1,9 @@
 import logging
 import re
 import uuid
+from typing import Literal
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Query, Response
 from pydantic import ValidationError
 from sqlalchemy import desc, func
 from sqlalchemy.exc import IntegrityError
@@ -29,6 +30,7 @@ from app.schemas.listing import (
     ListingImageOut,
     ListingListItem,
     ListingUpdate,
+    MyListingItem,
 )
 from app.storage import public_url
 
@@ -51,14 +53,14 @@ def _get_visible_listing(db: Session, listing_id: str, user: User) -> Listing:
     return listing
 
 
-def _require_draft(listing: Listing) -> None:
-    """Photos can only be added before publishing in E2."""
-    if listing.status != "draft":
-        raise ApiError(409, "listing_not_draft", "Photos can only be added before publishing.")
-
-
 def _listing_sold() -> ApiError:
     return ApiError(409, "listing_sold", "Sold listings can't be changed. Mark it unsold first.")
+
+
+def _require_not_sold(listing: Listing) -> None:
+    """Sold listings are frozen: no edits and no photo changes (ADR 0010)."""
+    if listing.status == "sold":
+        raise _listing_sold()
 
 
 def _unknown_category() -> ApiError:
@@ -87,6 +89,18 @@ def _image_out(image: ListingImage) -> ListingImageOut:
 def _cover_image_url(listing: Listing) -> str | None:
     cover = next((image for image in listing.images if image.position == 0), None)
     return public_url(cover.storage_path) if cover else None
+
+
+def _list_item_fields(listing: Listing) -> dict:
+    return dict(
+        id=listing.id,
+        title=listing.title,
+        description=listing.description,
+        price_cents=listing.price_cents,
+        category=listing.category,
+        cover_image_url=_cover_image_url(listing),
+        created_at=listing.created_at,
+    )
 
 
 def _to_detail(listing: Listing) -> ListingDetail:
@@ -155,17 +169,28 @@ def list_listings(db: Session = Depends(get_db)):
         .order_by(desc(Listing.created_at))
         .all()
     )
+    return [ListingListItem(**_list_item_fields(listing)) for listing in listings]
+
+
+# Declared before /listings/{listing_id}, or "mine" would be matched as a listing ID.
+@router.get("/listings/mine", response_model=list[MyListingItem])
+def list_my_listings(
+    status: Literal["active", "draft", "sold"] | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """The only endpoint that lists drafts: how a seller gets back to a draft whose publish
+    failed partway."""
+    query = (
+        db.query(Listing)
+        .options(joinedload(Listing.category), selectinload(Listing.images))
+        .filter(Listing.seller_id == current_user.id)
+    )
+    if status is not None:
+        query = query.filter(Listing.status == status)
+    listings = query.order_by(desc(Listing.created_at)).all()
     return [
-        ListingListItem(
-            id=listing.id,
-            title=listing.title,
-            description=listing.description,
-            price_cents=listing.price_cents,
-            category=listing.category,
-            cover_image_url=_cover_image_url(listing),
-            created_at=listing.created_at,
-        )
-        for listing in listings
+        MyListingItem(**_list_item_fields(listing), status=listing.status) for listing in listings
     ]
 
 
@@ -203,14 +228,14 @@ def create_image_upload_url(
     body: ImageUploadUrlRequest,
     listing: Listing = Depends(get_owned_listing),
 ):
-    _require_draft(listing)
+    _require_not_sold(listing)
     extension = IMAGE_EXTENSIONS.get(body.content_type)
     if extension is None:
         raise ApiError(
             422, "unsupported_content_type", "Photos must be JPEG, PNG, or WebP images."
         )
 
-    # The server picks the path, so a client can only ever upload into its own draft's folder.
+    # The server picks the path, so a client can only ever upload into its own listing's folder.
     storage_path = f"listings/{listing.id}/{uuid.uuid4()}.{extension}"
     try:
         upload_url = storage.create_signed_upload_url(storage_path)
@@ -230,7 +255,7 @@ def add_listing_image(
     listing: Listing = Depends(get_owned_listing),
     db: Session = Depends(get_db),
 ):
-    _require_draft(listing)
+    _require_not_sold(listing)
     if not _is_own_storage_path(listing, body.storage_path):
         # Without this, a seller could attach someone else's uploaded photo to their listing.
         raise ApiError(
@@ -294,8 +319,7 @@ def update_listing(
     listing: Listing = Depends(get_owned_listing),
     db: Session = Depends(get_db),
 ):
-    if listing.status == "sold":
-        raise _listing_sold()
+    _require_not_sold(listing)
     fields = changes.model_dump(exclude_unset=True)
     if "category_id" in fields and db.get(Category, fields["category_id"]) is None:
         raise _unknown_category()
@@ -354,3 +378,58 @@ def _set_status(db: Session, listing: Listing, status: str) -> ListingDetail:
     db.commit()
     db.refresh(listing)
     return _to_detail(listing)
+
+
+@router.delete("/listings/{listing_id}/images/{image_id}", status_code=204)
+def delete_listing_image(
+    image_id: str,
+    listing: Listing = Depends(get_owned_listing),
+    db: Session = Depends(get_db),
+):
+    # Lock the listing so two deletes at once can't both pass the last-photo check, or collide
+    # while renumbering. Then re-read it and its photos, which may have changed before the lock.
+    # (A plain query: Postgres can't lock through the outer joins the original load used.)
+    db.query(Listing).filter(Listing.id == listing.id).with_for_update().populate_existing().one()
+    images = (
+        db.query(ListingImage)
+        .filter(ListingImage.listing_id == listing.id)
+        .order_by(ListingImage.position)
+        .populate_existing()
+        .all()
+    )
+    try:
+        parsed_id = uuid.UUID(image_id)
+    except ValueError:
+        parsed_id = None
+    image = next((i for i in images if i.id == parsed_id), None)
+    if image is None:
+        raise ApiError(404, "image_not_found", "Photo not found.")
+    _require_not_sold(listing)
+    # A published listing with no photos would show a broken card in the feed. Drafts may go
+    # down to 0, since publishing already requires at least 1.
+    if listing.status == "active" and len(images) == 1:
+        raise ApiError(
+            422,
+            "last_photo_required",
+            "A published listing needs at least one photo. Add another first.",
+        )
+
+    storage_path = image.storage_path
+    db.delete(image)
+    db.flush()
+    # Close the gap so positions stay 0, 1, 2... Deleting the cover makes the next photo the
+    # cover. (listing_id, position) is unique and checked on every update, so move each photo
+    # down one at a time, lowest first: its new position is always already free.
+    for later in (i for i in images if i.position > image.position):
+        later.position -= 1
+        db.flush()
+    listing.updated_at = func.now()
+    db.commit()
+
+    # Same as deleting a listing: the database is the source of truth, and a file left behind
+    # in storage is the acceptable failure (ADR 0010).
+    try:
+        storage.delete_objects([storage_path])
+    except storage.StorageUnavailable as e:
+        logger.warning("Deleted photo, but couldn't remove %s from storage: %s", storage_path, e)
+    return Response(status_code=204)
