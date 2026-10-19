@@ -14,14 +14,16 @@ PRICE_MAX_CENTS = 1_000_000  # $10,000
 MAX_PHOTOS = 6
 
 
+# Trimmed first, then length-checked.
+Title = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=TITLE_MIN, max_length=TITLE_MAX)
+]
+Description = Annotated[str, StringConstraints(strip_whitespace=True, max_length=DESCRIPTION_MAX)]
+
+
 class ListingCreate(BaseModel):
-    # Trimmed first, then length-checked.
-    title: Annotated[
-        str, StringConstraints(strip_whitespace=True, min_length=TITLE_MIN, max_length=TITLE_MAX)
-    ]
-    description: Annotated[
-        str, StringConstraints(strip_whitespace=True, max_length=DESCRIPTION_MAX)
-    ] | None = None
+    title: Title
+    description: Description | None = None
     price_cents: int = Field(ge=0, le=PRICE_MAX_CENTS)
     category_id: int
 
@@ -29,6 +31,30 @@ class ListingCreate(BaseModel):
     @classmethod
     def empty_description_is_none(cls, value: str | None) -> str | None:
         return value or None
+
+
+class ListingUpdate(BaseModel):
+    """PATCH /listings/{id}: any subset of the fields, with the same rules as ListingCreate.
+    Read it with `model_dump(exclude_unset=True)` so fields the client left out stay as they
+    are. Only `description` may be sent as null (which clears it)."""
+
+    title: Title | None = None
+    description: Description | None = None
+    price_cents: int | None = Field(default=None, ge=0, le=PRICE_MAX_CENTS)
+    category_id: int | None = None
+
+    @field_validator("description")
+    @classmethod
+    def empty_description_is_none(cls, value: str | None) -> str | None:
+        return value or None
+
+    # Validators don't run on defaults, so this only fires when the client sends null.
+    @field_validator("title", "price_cents", "category_id")
+    @classmethod
+    def not_null(cls, value):
+        if value is None:
+            raise ValueError("can't be null")
+        return value
 
 
 class ListingCreateResponse(BaseModel):

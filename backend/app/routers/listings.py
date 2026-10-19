@@ -1,3 +1,4 @@
+import logging
 import re
 import uuid
 
@@ -27,12 +28,15 @@ from app.schemas.listing import (
     ListingImageCreate,
     ListingImageOut,
     ListingListItem,
+    ListingUpdate,
 )
 from app.storage import public_url
 
 # The photo types the bucket accepts (supabase/storage/listing-photos.sql), and the file
 # extension each one is stored under.
 IMAGE_EXTENSIONS = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+
+logger = logging.getLogger(__name__)
 
 # Login-only API: every route on this router requires a valid token.
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -51,6 +55,14 @@ def _require_draft(listing: Listing) -> None:
     """Photos can only be added before publishing in E2."""
     if listing.status != "draft":
         raise ApiError(409, "listing_not_draft", "Photos can only be added before publishing.")
+
+
+def _listing_sold() -> ApiError:
+    return ApiError(409, "listing_sold", "Sold listings can't be changed. Mark it unsold first.")
+
+
+def _unknown_category() -> ApiError:
+    return ApiError(422, "unknown_category", "That category doesn't exist.")
 
 
 def _storage_unavailable() -> ApiError:
@@ -117,7 +129,7 @@ def create_listing(
 ):
     category = db.query(Category).filter(Category.id == listing.category_id).first()
     if category is None:
-        raise ApiError(422, "unknown_category", "That category doesn't exist.")
+        raise _unknown_category()
 
     new_listing = Listing(
         title=listing.title,
@@ -274,3 +286,71 @@ def add_listing_image(
         raise ApiError(409, "position_taken", "Another photo already has that position.")
     db.refresh(image)
     return _image_out(image)
+
+
+@router.patch("/listings/{listing_id}", response_model=ListingDetail)
+def update_listing(
+    changes: ListingUpdate,
+    listing: Listing = Depends(get_owned_listing),
+    db: Session = Depends(get_db),
+):
+    if listing.status == "sold":
+        raise _listing_sold()
+    fields = changes.model_dump(exclude_unset=True)
+    if "category_id" in fields and db.get(Category, fields["category_id"]) is None:
+        raise _unknown_category()
+
+    if fields:
+        for name, value in fields.items():
+            setattr(listing, name, value)
+        # created_at is left alone: the feed sorts by it, and edits don't bump a listing (ADR 0010).
+        listing.updated_at = func.now()
+        db.commit()
+        db.refresh(listing)
+    return _to_detail(listing)
+
+
+@router.delete("/listings/{listing_id}", status_code=204)
+def delete_listing(
+    listing: Listing = Depends(get_owned_listing),
+    db: Session = Depends(get_db),
+):
+    folder = f"listings/{listing.id}"
+    # The database goes first, and its listing_images rows cascade. Storage can't share the
+    # transaction, so if it fails afterwards, leftover files are the acceptable outcome; a
+    # half-deleted listing isn't (ADR 0010).
+    db.delete(listing)
+    db.commit()
+    try:
+        storage.remove_folder(folder)
+    except storage.StorageUnavailable as e:
+        logger.warning("Deleted listing, but couldn't remove %s from storage: %s", folder, e)
+    return Response(status_code=204)
+
+
+@router.post("/listings/{listing_id}/sold", response_model=ListingDetail)
+def mark_sold(
+    listing: Listing = Depends(get_owned_listing),
+    db: Session = Depends(get_db),
+):
+    if listing.status != "active":
+        raise ApiError(409, "listing_not_active", "Only an active listing can be marked sold.")
+    return _set_status(db, listing, "sold")
+
+
+@router.post("/listings/{listing_id}/unsold", response_model=ListingDetail)
+def mark_unsold(
+    listing: Listing = Depends(get_owned_listing),
+    db: Session = Depends(get_db),
+):
+    if listing.status != "sold":
+        raise ApiError(409, "listing_not_sold", "This listing isn't marked sold.")
+    return _set_status(db, listing, "active")
+
+
+def _set_status(db: Session, listing: Listing, status: str) -> ListingDetail:
+    listing.status = status
+    listing.updated_at = func.now()
+    db.commit()
+    db.refresh(listing)
+    return _to_detail(listing)
