@@ -9,7 +9,12 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app import storage
 from app.db import get_db
-from app.dependencies import get_current_user
+from app.dependencies import (
+    get_current_user,
+    get_owned_listing,
+    listing_not_found,
+    load_listing,
+)
 from app.errors import ApiError
 from app.models import Category, Listing, ListingImage, User
 from app.schemas.listing import (
@@ -33,46 +38,19 @@ IMAGE_EXTENSIONS = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
-def _not_found() -> ApiError:
-    return ApiError(404, "listing_not_found", "Listing not found.")
-
-
 def _get_visible_listing(db: Session, listing_id: str, user: User) -> Listing:
     """The listing, if `user` may see it. Anyone else's draft is a 404, exactly like a listing
     that doesn't exist, so outsiders can't tell whether a draft exists."""
-    try:
-        parsed_id = uuid.UUID(listing_id)
-    except ValueError:
-        raise _not_found()
-
-    listing = (
-        db.query(Listing)
-        .options(
-            joinedload(Listing.category),
-            joinedload(Listing.seller),
-            selectinload(Listing.images),
-        )
-        .filter(Listing.id == parsed_id)
-        .first()
-    )
+    listing = load_listing(db, listing_id)
     if listing is None or (listing.status == "draft" and listing.seller_id != user.id):
-        raise _not_found()
+        raise listing_not_found()
     return listing
 
 
-def _require_owner(listing: Listing, user: User) -> None:
-    if listing.seller_id != user.id:
-        raise ApiError(403, "not_owner", "You can't change someone else's listing.")
-
-
-def _get_own_draft(db: Session, listing_id: str, user: User) -> Listing:
-    """The listing, if `user` is its seller and it's still a draft (photos can only be added
-    before publishing in E2)."""
-    listing = _get_visible_listing(db, listing_id, user)
-    _require_owner(listing, user)
+def _require_draft(listing: Listing) -> None:
+    """Photos can only be added before publishing in E2."""
     if listing.status != "draft":
         raise ApiError(409, "listing_not_draft", "Photos can only be added before publishing.")
-    return listing
 
 
 def _storage_unavailable() -> ApiError:
@@ -190,12 +168,9 @@ def get_listing(
 
 @router.post("/listings/{listing_id}/publish", response_model=ListingDetail)
 def publish_listing(
-    listing_id: str,
-    current_user: User = Depends(get_current_user),
+    listing: Listing = Depends(get_owned_listing),
     db: Session = Depends(get_db),
 ):
-    listing = _get_visible_listing(db, listing_id, current_user)
-    _require_owner(listing, current_user)
     if listing.status != "draft":
         raise ApiError(409, "already_published", "This listing is already published.")
     if not listing.images:
@@ -213,12 +188,10 @@ def publish_listing(
 
 @router.post("/listings/{listing_id}/images/upload-url", response_model=ImageUploadUrlOut)
 def create_image_upload_url(
-    listing_id: str,
     body: ImageUploadUrlRequest,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    listing: Listing = Depends(get_owned_listing),
 ):
-    listing = _get_own_draft(db, listing_id, current_user)
+    _require_draft(listing)
     extension = IMAGE_EXTENSIONS.get(body.content_type)
     if extension is None:
         raise ApiError(
@@ -240,13 +213,12 @@ def create_image_upload_url(
 
 @router.post("/listings/{listing_id}/images", status_code=201, response_model=ListingImageOut)
 def add_listing_image(
-    listing_id: str,
     body: ListingImageCreate,
     response: Response,
-    current_user: User = Depends(get_current_user),
+    listing: Listing = Depends(get_owned_listing),
     db: Session = Depends(get_db),
 ):
-    listing = _get_own_draft(db, listing_id, current_user)
+    _require_draft(listing)
     if not _is_own_storage_path(listing, body.storage_path):
         # Without this, a seller could attach someone else's uploaded photo to their listing.
         raise ApiError(

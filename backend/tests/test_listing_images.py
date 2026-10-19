@@ -173,17 +173,18 @@ def test_upload_url_rejects_other_file_types(client, seller, draft, fake_storage
     assert fake_storage.signed == []
 
 
-def test_non_seller_upload_url_for_an_active_listing_is_403(
+def test_non_seller_upload_url_for_an_active_listing_is_404(
     client, seller, other, draft, upload, register
 ):
+    # 404, not 403: a 403 would confirm the listing exists (get_owned_listing, ADR 0010).
     listing_id = draft()
     register(listing_id, upload(listing_id), 0)
     publish(client, seller, listing_id)
     r = client.post(
         f"/listings/{listing_id}/images/upload-url", headers=other, json={"content_type": "image/jpeg"}
     )
-    assert r.status_code == 403
-    assert r.json()["code"] == "not_owner"
+    assert r.status_code == 404
+    assert r.json()["code"] == "listing_not_found"
 
 
 def test_non_seller_upload_url_for_a_draft_is_404(client, other, draft, fake_storage):
@@ -288,16 +289,17 @@ def test_registering_on_a_published_listing_is_rejected(
     assert len(image_rows(db_session, listing_id)) == 1
 
 
-def test_non_seller_registering_on_an_active_listing_is_403(
+def test_non_seller_registering_on_an_active_listing_is_404(
     client, seller, other, draft, upload, register
 ):
+    # 404, not 403: a 403 would confirm the listing exists (get_owned_listing, ADR 0010).
     listing_id = draft()
     photo = upload(listing_id)
     register(listing_id, photo, 0)
     publish(client, seller, listing_id)
     r = register(listing_id, photo, 1, headers=other)
-    assert r.status_code == 403
-    assert r.json()["code"] == "not_owner"
+    assert r.status_code == 404
+    assert r.json()["code"] == "listing_not_found"
 
 
 def test_non_seller_registering_on_a_draft_is_404(draft, upload, register, other):

@@ -140,13 +140,14 @@ def test_publish_twice_is_409(client, seller, create, add_photos):
     assert r.json()["code"] == "already_published"
 
 
-def test_non_seller_publishing_an_active_listing_is_403(client, seller, other, create, add_photos):
+def test_non_seller_publishing_an_active_listing_is_404(client, seller, other, create, add_photos):
+    # 404, not 403: a 403 would confirm the listing exists (get_owned_listing, ADR 0010).
     listing = create()
     add_photos(listing["id"], [0])
     client.post(f"/listings/{listing['id']}/publish", headers=seller)
     r = client.post(f"/listings/{listing['id']}/publish", headers=other)
-    assert r.status_code == 403
-    assert r.json()["code"] == "not_owner"
+    assert r.status_code == 404
+    assert r.json()["code"] == "listing_not_found"
 
 
 def test_non_seller_publishing_a_draft_is_404(client, other, create, add_photos, db_session):
@@ -192,6 +193,21 @@ def test_active_listing_is_visible_to_anyone_logged_in(client, seller, other, cr
 @pytest.mark.parametrize("listing_id", [str(uuid.uuid4()), "not-a-uuid"])
 def test_unknown_or_malformed_id_is_404(client, seller, listing_id):
     r = client.get(f"/listings/{listing_id}", headers=seller)
+    assert r.status_code == 404
+    assert r.json()["code"] == "listing_not_found"
+
+
+@pytest.mark.parametrize("listing_id", [str(uuid.uuid4()), "not-a-uuid"])
+@pytest.mark.parametrize(
+    "path, body",
+    [
+        ("publish", None),
+        ("images/upload-url", {"content_type": "image/jpeg"}),
+        ("images", {"storage_path": "listings/x/y.jpg", "position": 0}),
+    ],
+)
+def test_seller_only_routes_404_on_unknown_or_malformed_id(client, seller, listing_id, path, body):
+    r = client.post(f"/listings/{listing_id}/{path}", headers=seller, json=body)
     assert r.status_code == 404
     assert r.json()["code"] == "listing_not_found"
 

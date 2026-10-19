@@ -1,6 +1,9 @@
-// Mock ReNest API for E2, following docs/api/listings.md. Turn it on with VITE_USE_MOCKS=true
-// in frontend/.env. When the real endpoints land (E2.2/E2.3), turn the mocks off: no
-// component changes are needed.
+// Mock ReNest API for E2 and E3, following docs/api/listings.md. Turn it on with
+// VITE_USE_MOCKS=true in frontend/.env. When the real endpoints land (E3.2/E3.3), turn the
+// mocks off: no component changes are needed.
+//
+// The image endpoints already follow E3.3's rule (any listing of yours that isn't sold, not
+// just drafts), so the edit page (E3.4) can add photos to published listings.
 //
 // State lives in memory and resets on page reload. Routes not handled here (e.g. /me) go to
 // the real API as usual.
@@ -14,6 +17,7 @@ import type {
   ListingDetail,
   ListingImage,
   ListingStatus,
+  MyListing,
 } from "../api/types";
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -67,23 +71,65 @@ const PLACEHOLDER_PHOTO =
   );
 
 const OTHER_SELLER: MockUser = { id: "00000000-0000-4000-8000-000000000002", display_name: "Sam" };
+const LISTING_STATUSES: ListingStatus[] = ["draft", "active", "sold"];
 
 const listings = new Map<string, MockListing>();
 // Files "uploaded" to the fake storage, by storage path → object URL for display.
 const uploads = new Map<string, string>();
 
-function seed(listing: Omit<MockListing, "images">, withPhoto: boolean) {
-  const images: MockImage[] = withPhoto
-    ? [
-        {
-          id: crypto.randomUUID(),
-          position: 0,
-          url: PLACEHOLDER_PHOTO,
-          storage_path: `listings/${listing.id}/seed.png`,
-        },
-      ]
-    : [];
+function seed(listing: Omit<MockListing, "images">, photos: number) {
+  const images: MockImage[] = Array.from({ length: photos }, (_, position) => ({
+    id: crypto.randomUUID(),
+    position,
+    url: PLACEHOLDER_PHOTO,
+    storage_path: `listings/${listing.id}/seed-${position}.png`,
+  }));
   listings.set(listing.id, { ...listing, images });
+}
+
+// Every user the mock sees gets one listing of each status, so My Listings (E3.5) and the
+// seller actions (E3.4) have something to work with right away.
+const seededUsers = new Set<string>();
+function seedOwnListings(user: MockUser) {
+  if (seededUsers.has(user.id)) return;
+  seededUsers.add(user.id);
+  const base = { description: null, seller: user };
+  seed(
+    {
+      ...base,
+      id: crypto.randomUUID(),
+      title: "Desk lamp",
+      price_cents: 1500,
+      category_id: 2,
+      status: "active",
+      created_at: "2026-09-30T18:00:00Z",
+    },
+    2,
+  );
+  seed(
+    {
+      ...base,
+      id: crypto.randomUUID(),
+      title: "Bookshelf (unfinished draft)",
+      price_cents: 2500,
+      category_id: 1,
+      status: "draft",
+      created_at: "2026-09-29T20:00:00Z",
+    },
+    0,
+  );
+  seed(
+    {
+      ...base,
+      id: crypto.randomUUID(),
+      title: "Calculus textbook",
+      price_cents: 3000,
+      category_id: 3,
+      status: "sold",
+      created_at: "2026-09-25T16:00:00Z",
+    },
+    1,
+  );
 }
 
 seed(
@@ -97,7 +143,7 @@ seed(
     seller: OTHER_SELLER,
     created_at: "2026-09-28T15:00:00Z",
   },
-  true,
+  1,
 );
 seed(
   {
@@ -110,7 +156,7 @@ seed(
     seller: OTHER_SELLER,
     created_at: "2026-09-27T12:00:00Z",
   },
-  false, // cover_image_url: null, like listings from before E2
+  0, // cover_image_url: null, like listings from before E2
 );
 // Someone else's draft: every request about it must get 404.
 seed(
@@ -124,7 +170,7 @@ seed(
     seller: OTHER_SELLER,
     created_at: "2026-09-29T09:00:00Z",
   },
-  false,
+  0,
 );
 
 // --- helpers -------------------------------------------------------------------------------
@@ -144,6 +190,12 @@ function validationError(field: string, msg: string) {
 // The mock trusts the token without verifying it: it only reads who is asking, so "your
 // listing" vs "someone else's" behaves like the real API.
 function currentUser(request: Request): MockUser {
+  const user = userFromToken(request);
+  seedOwnListings(user);
+  return user;
+}
+
+function userFromToken(request: Request): MockUser {
   const token = request.headers.get("Authorization")?.replace(/^Bearer /, "");
   try {
     const payload = JSON.parse(atob(token!.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
@@ -190,6 +242,62 @@ function toListItem(listing: MockListing): Listing {
   };
 }
 
+function toMyListing(listing: MockListing): MyListing {
+  return { ...toListItem(listing), status: listing.status };
+}
+
+// The validation rules shared by POST /listings and PATCH /listings/{id}. With `partial`, a
+// field that's missing is left alone instead of being an error.
+type ListingFields = Partial<
+  Pick<MockListing, "title" | "description" | "price_cents" | "category_id">
+>;
+function checkFields(
+  body: Record<string, unknown>,
+  partial: boolean,
+): { fields: ListingFields } | { response: Response } {
+  const fields: ListingFields = {};
+  const has = (key: string) => !partial || key in body;
+
+  if (has("title")) {
+    const title = typeof body.title === "string" ? body.title.trim() : "";
+    if (title.length < 3 || title.length > 80) {
+      return { response: validationError("title", "Title must be 3–80 characters") };
+    }
+    fields.title = title;
+  }
+  if (has("description")) {
+    const description =
+      typeof body.description === "string" ? body.description.trim() || null : null;
+    if (description && description.length > 2000) {
+      return {
+        response: validationError("description", "Description must be at most 2,000 characters"),
+      };
+    }
+    fields.description = description;
+  }
+  if (has("price_cents")) {
+    const price = body.price_cents;
+    if (typeof price !== "number" || !Number.isInteger(price) || price < 0 || price > 1_000_000) {
+      return { response: validationError("price_cents", "Price must be between $0 and $10,000") };
+    }
+    fields.price_cents = price;
+  }
+  if (has("category_id")) {
+    if (typeof body.category_id !== "number") {
+      return { response: validationError("category_id", "Category is required") };
+    }
+    if (!CATEGORIES.some((c) => c.id === body.category_id)) {
+      return { response: error(422, "unknown_category", "That category doesn't exist.") };
+    }
+    fields.category_id = body.category_id;
+  }
+  return { fields };
+}
+
+function soldError() {
+  return error(409, "listing_sold", "Sold listings can't be changed. Mark it unsold first.");
+}
+
 type Lookup = { listing: MockListing } | { response: Response };
 
 // Someone else's draft is reported exactly like a missing listing (404).
@@ -201,14 +309,14 @@ function findVisible(request: Request, id: string): Lookup {
   return { listing };
 }
 
-// For the image and publish endpoints: must be visible AND yours.
+// For every endpoint that changes a listing: someone else's listing, whatever its status, is
+// a 404 exactly like a missing one (the backend's get_owned_listing()).
 function findOwned(request: Request, id: string): Lookup {
-  const found = findVisible(request, id);
-  if ("response" in found) return found;
-  if (found.listing.seller.id !== currentUser(request).id) {
-    return { response: error(403, "not_owner", "You can't change someone else's listing.") };
+  const listing = listings.get(id);
+  if (!listing || listing.seller.id !== currentUser(request).id) {
+    return { response: error(404, "listing_not_found", "Listing not found.") };
   }
-  return found;
+  return { listing };
 }
 
 // --- handlers ------------------------------------------------------------------------------
@@ -216,44 +324,27 @@ function findOwned(request: Request, id: string): Lookup {
 export const handlers = [
   http.get(`${API}/categories`, () => HttpResponse.json(CATEGORIES)),
 
-  http.get(`${API}/listings`, () =>
-    HttpResponse.json(
+  http.get(`${API}/listings`, ({ request }) => {
+    currentUser(request); // so your own seeded active listing shows in the feed too
+    return HttpResponse.json(
       [...listings.values()]
         .filter((l) => l.status === "active")
         .sort((a, b) => b.created_at.localeCompare(a.created_at))
         .map(toListItem),
-    ),
-  ),
+    );
+  }),
 
   http.post(`${API}/listings`, async ({ request }) => {
-    const body = (await request.json()) as Record<string, unknown>;
-    const title = typeof body.title === "string" ? body.title.trim() : "";
-    const description =
-      typeof body.description === "string" ? body.description.trim() || null : null;
-    const price = body.price_cents;
-
-    if (title.length < 3 || title.length > 80) {
-      return validationError("title", "Title must be 3–80 characters");
-    }
-    if (description && description.length > 2000) {
-      return validationError("description", "Description must be at most 2,000 characters");
-    }
-    if (typeof price !== "number" || !Number.isInteger(price) || price < 0 || price > 1_000_000) {
-      return validationError("price_cents", "Price must be between $0 and $10,000");
-    }
-    if (typeof body.category_id !== "number") {
-      return validationError("category_id", "Category is required");
-    }
-    if (!CATEGORIES.some((c) => c.id === body.category_id)) {
-      return error(422, "unknown_category", "That category doesn't exist.");
-    }
+    const checked = checkFields((await request.json()) as Record<string, unknown>, false);
+    if ("response" in checked) return checked.response;
+    const { title, description, price_cents, category_id } = checked.fields;
 
     const listing: MockListing = {
       id: crypto.randomUUID(),
-      title,
-      description,
-      price_cents: price,
-      category_id: body.category_id,
+      title: title!,
+      description: description ?? null,
+      price_cents: price_cents!,
+      category_id: category_id!,
       status: "draft",
       seller: currentUser(request),
       images: [],
@@ -275,6 +366,32 @@ export const handlers = [
     );
   }),
 
+  // Declared before /listings/:id, or "mine" would be matched as a listing ID.
+  http.get(`${API}/listings/mine`, ({ request }) => {
+    const status = new URL(request.url).searchParams.get("status");
+    if (status !== null && !LISTING_STATUSES.includes(status as ListingStatus)) {
+      return HttpResponse.json(
+        {
+          detail: [
+            {
+              type: "enum",
+              loc: ["query", "status"],
+              msg: "Input should be 'active', 'draft' or 'sold'",
+            },
+          ],
+        },
+        { status: 422 },
+      );
+    }
+    const me = currentUser(request);
+    return HttpResponse.json(
+      [...listings.values()]
+        .filter((l) => l.seller.id === me.id && (status === null || l.status === status))
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .map(toMyListing),
+    );
+  }),
+
   http.get(`${API}/listings/:id`, ({ request, params }) => {
     const found = findVisible(request, params.id as string);
     if ("response" in found) return found.response;
@@ -284,9 +401,7 @@ export const handlers = [
   http.post(`${API}/listings/:id/images/upload-url`, async ({ request, params }) => {
     const found = findOwned(request, params.id as string);
     if ("response" in found) return found.response;
-    if (found.listing.status !== "draft") {
-      return error(409, "listing_not_draft", "Photos can only be added before publishing.");
-    }
+    if (found.listing.status === "sold") return soldError();
 
     const { content_type } = (await request.json()) as { content_type?: string };
     const ext = EXTENSIONS[content_type as ImageContentType];
@@ -322,9 +437,7 @@ export const handlers = [
     const found = findOwned(request, params.id as string);
     if ("response" in found) return found.response;
     const { listing } = found;
-    if (listing.status !== "draft") {
-      return error(409, "listing_not_draft", "Photos can only be added before publishing.");
-    }
+    if (listing.status === "sold") return soldError();
 
     const { storage_path, position } = (await request.json()) as {
       storage_path?: string;
@@ -373,5 +486,71 @@ export const handlers = [
     }
     listing.status = "active";
     return HttpResponse.json(toDetail(listing));
+  }),
+
+  // --- E3 ----------------------------------------------------------------------------------
+
+  http.patch(`${API}/listings/:id`, async ({ request, params }) => {
+    const found = findOwned(request, params.id as string);
+    if ("response" in found) return found.response;
+    const { listing } = found;
+    if (listing.status === "sold") return soldError();
+
+    const checked = checkFields((await request.json()) as Record<string, unknown>, true);
+    if ("response" in checked) return checked.response;
+    // created_at is left alone, so an edited listing keeps its place in the feed.
+    Object.assign(listing, checked.fields);
+    return HttpResponse.json(toDetail(listing));
+  }),
+
+  http.delete(`${API}/listings/:id`, ({ request, params }) => {
+    const found = findOwned(request, params.id as string);
+    if ("response" in found) return found.response;
+    listings.delete(found.listing.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post(`${API}/listings/:id/sold`, ({ request, params }) => {
+    const found = findOwned(request, params.id as string);
+    if ("response" in found) return found.response;
+    const { listing } = found;
+    if (listing.status !== "active") {
+      return error(409, "listing_not_active", "Only an active listing can be marked sold.");
+    }
+    listing.status = "sold";
+    return HttpResponse.json(toDetail(listing));
+  }),
+
+  http.post(`${API}/listings/:id/unsold`, ({ request, params }) => {
+    const found = findOwned(request, params.id as string);
+    if ("response" in found) return found.response;
+    const { listing } = found;
+    if (listing.status !== "sold") {
+      return error(409, "listing_not_sold", "This listing isn't marked sold.");
+    }
+    listing.status = "active";
+    return HttpResponse.json(toDetail(listing));
+  }),
+
+  http.delete(`${API}/listings/:id/images/:imageId`, ({ request, params }) => {
+    const found = findOwned(request, params.id as string);
+    if ("response" in found) return found.response;
+    const { listing } = found;
+    const image = listing.images.find((i) => i.id === params.imageId);
+    if (!image) return error(404, "image_not_found", "Photo not found.");
+    if (listing.status === "sold") return soldError();
+    if (listing.status === "active" && listing.images.length === 1) {
+      return error(
+        422,
+        "last_photo_required",
+        "A published listing needs at least one photo. Add another first.",
+      );
+    }
+    // Close the gap so positions stay 0, 1, 2… (deleting the cover promotes the next photo).
+    listing.images = listing.images
+      .filter((i) => i !== image)
+      .sort((a, b) => a.position - b.position)
+      .map((i, position) => ({ ...i, position }));
+    return new HttpResponse(null, { status: 204 });
   }),
 ];
