@@ -56,7 +56,7 @@ export function SellerActions({ listing, onChange }: SellerActionsProps) {
     setError(null);
     try {
       await deleteListing(listing.id);
-      navigate("/", { replace: true });
+      navigate("/account/listings", { replace: true });
     } catch (e) {
       setError(errorMessage(e, "Could not delete this listing. Try again."));
       setRunning(null);
