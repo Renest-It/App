@@ -139,7 +139,7 @@ export function usePublishListing() {
   return { publish, isPublishing, error, photoStatuses };
 }
 
-async function putToStorage(url: string, file: File) {
+export async function putToStorage(url: string, file: File) {
   let response: Response;
   try {
     response = await fetch(url, {
@@ -166,7 +166,7 @@ async function runWithConcurrency<T>(items: T[], limit: number, task: (item: T) 
 // Warns before leaving the tab while photos are still uploading, so a stray back-swipe or tab
 // close doesn't abandon an in-progress publish (the draft and any uploaded photos are still
 // safely resumable on return, but the user doesn't know that).
-function useBeforeUnloadWarning(active: boolean) {
+export function useBeforeUnloadWarning(active: boolean) {
   useEffect(() => {
     if (!active) return;
     function handler(event: BeforeUnloadEvent) {

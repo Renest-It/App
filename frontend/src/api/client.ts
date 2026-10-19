@@ -10,6 +10,7 @@ import type {
   ListingDetail,
   ListingImage,
   ListingImageCreate,
+  ListingUpdate,
 } from "./types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -94,6 +95,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw error;
   }
 
+  // 204 No Content (the DELETE endpoints) has no body to parse.
+  if (response.status === 204) return undefined as T;
   return response.json();
 }
 
@@ -130,3 +133,26 @@ export const addListingImage = (listingId: string, data: ListingImageCreate) =>
 
 export const publishListing = (listingId: string) =>
   request<ListingDetail>(`/listings/${listingId}/publish`, { method: "POST" });
+
+// --- E3: listing management (see docs/api/listings.md → E3 endpoints) ---
+
+// Send only the fields that changed.
+export const updateListing = (listingId: string, data: ListingUpdate) =>
+  request<ListingDetail>(`/listings/${listingId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+export const deleteListing = (listingId: string) =>
+  request<void>(`/listings/${listingId}`, { method: "DELETE" });
+
+export const markListingSold = (listingId: string) =>
+  request<ListingDetail>(`/listings/${listingId}/sold`, { method: "POST" });
+
+export const markListingUnsold = (listingId: string) =>
+  request<ListingDetail>(`/listings/${listingId}/unsold`, { method: "POST" });
+
+// The photos after the deleted one move down a position, so re-fetch the listing afterwards.
+export const deleteListingImage = (listingId: string, imageId: string) =>
+  request<void>(`/listings/${listingId}/images/${imageId}`, { method: "DELETE" });

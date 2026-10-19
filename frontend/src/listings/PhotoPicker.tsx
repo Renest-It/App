@@ -1,17 +1,28 @@
 import { Camera, Check, CircleAlert, LoaderCircle, X } from "lucide-react";
 import { useId, useRef } from "react";
 import { MAX_PHOTOS } from "./validation";
-import type { PickedPhoto } from "./usePhotoPicker";
 import type { PhotoStatus } from "./usePublishListing";
 
+// Anything with an id and an image to show: a file picked on this page (usePhotoPicker), or a
+// photo already saved on the listing (E3.4's edit page, where previewUrl is its real URL).
+export type PhotoThumb = {
+  id: string;
+  previewUrl: string;
+};
+
 type PhotoPickerProps = {
-  photos: PickedPhoto[];
+  photos: PhotoThumb[];
   onAdd: (files: File[]) => void;
   onRemove: (id: string) => void;
   error?: string;
   // Set only while publishing (E2.5) — each photo's upload progress, keyed by PickedPhoto id.
   statuses?: Record<string, PhotoStatus>;
   disabled?: boolean;
+  // Hides a photo's remove button when this returns false (e.g. the only photo on a published
+  // listing). Every photo is removable when it's omitted.
+  canRemove?: (id: string) => boolean;
+  // Extra guidance under the photo count.
+  hint?: string;
 };
 
 // Picks files, shows thumbnails, and — while publishing — each photo's upload status.
@@ -22,6 +33,8 @@ export function PhotoPicker({
   error,
   statuses,
   disabled = false,
+  canRemove,
+  hint,
 }: PhotoPickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
@@ -64,7 +77,7 @@ export function PhotoPicker({
                   Cover
                 </span>
               )}
-              {!disabled && (
+              {!disabled && (canRemove?.(photo.id) ?? true) && (
                 <button
                   type="button"
                   onClick={() => onRemove(photo.id)}
@@ -136,6 +149,7 @@ export function PhotoPicker({
       <span className="text-caption text-text-placeholder">
         {photos.length}/{MAX_PHOTOS} photos
       </span>
+      {hint && <p className="text-caption text-text-muted">{hint}</p>}
       {error && (
         <p id={errorId} className="text-caption font-medium text-danger-text">
           {error}

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import type { Listing } from "../../api/types";
+import { Button } from "../../components/Button";
 import { CategoryChip } from "../../components/CategoryChip";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { PriceInput } from "../../components/PriceInput";
 import { Select } from "../../components/Select";
+import { StatusBadge } from "../../components/StatusBadge";
 import { Textarea } from "../../components/Textarea";
 import { ListingCard } from "../../listings/ListingCard";
 
@@ -46,12 +49,13 @@ const SAMPLE_LISTINGS: Listing[] = [
   },
 ];
 
-// Every state of E2.4's new shared components, for review before they're used on real pages.
-// Dev-only: not linked from the app's nav. See E2.4 (SCRUM-35) acceptance criteria.
+// Every state of E2.4's and E3.4's shared components, for review before they're used on real
+// pages. Dev-only: not linked from the app's nav. See E2.4 (SCRUM-35) and E3.4 (SCRUM-45).
 export function ComponentGallery() {
   const [textareaValue, setTextareaValue] = useState("Used for one year, works great.");
   const [selectValue, setSelectValue] = useState("");
   const [priceValue, setPriceValue] = useState("");
+  const [openDialog, setOpenDialog] = useState<DialogDemo | null>(null);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-10 p-6">
@@ -131,6 +135,67 @@ export function ComponentGallery() {
         </div>
       </Section>
 
+      <Section title="StatusBadge">
+        <div className="flex flex-wrap gap-2">
+          <StatusBadge status="draft" />
+          <StatusBadge status="active" />
+          <StatusBadge status="sold" />
+        </div>
+      </Section>
+
+      <Section title="ConfirmDialog">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {DIALOG_DEMOS.map((demo) => (
+            <Button key={demo} variant="secondary" onClick={() => setOpenDialog(demo)}>
+              {demo}
+            </Button>
+          ))}
+        </div>
+        <ConfirmDialog
+          open={openDialog === "Default"}
+          title="Mark as sold?"
+          confirmLabel="Mark as sold"
+          onConfirm={() => setOpenDialog(null)}
+          onCancel={() => setOpenDialog(null)}
+        >
+          <strong className="font-semibold text-text">Mini fridge</strong> will be hidden from the
+          home feed. You can relist it anytime.
+        </ConfirmDialog>
+        <ConfirmDialog
+          open={openDialog === "Destructive"}
+          title="Delete this listing?"
+          confirmLabel="Delete listing"
+          destructive
+          onConfirm={() => setOpenDialog(null)}
+          onCancel={() => setOpenDialog(null)}
+        >
+          <strong className="font-semibold text-text">Mini fridge</strong> and its photos will be
+          permanently deleted. This can't be undone.
+        </ConfirmDialog>
+        <ConfirmDialog
+          open={openDialog === "Loading"}
+          title="Delete this listing?"
+          confirmLabel="Delete listing"
+          destructive
+          loading
+          onConfirm={() => {}}
+          onCancel={() => setOpenDialog(null)}
+        >
+          Stays open while the request runs: Escape and Cancel do nothing. Reload to close.
+        </ConfirmDialog>
+        <ConfirmDialog
+          open={openDialog === "Error"}
+          title="Remove this photo?"
+          confirmLabel="Remove photo"
+          destructive
+          error="Could not reach the server. Check your connection."
+          onConfirm={() => setOpenDialog(null)}
+          onCancel={() => setOpenDialog(null)}
+        >
+          It's deleted from your listing right away, and can't be undone.
+        </ConfirmDialog>
+      </Section>
+
       <Section title="ListingCard">
         {/* With a photo, free with no photo, and a long title — the three states most likely
             to break the layout. Covers both price formats and the no-cover-photo case
@@ -144,6 +209,9 @@ export function ComponentGallery() {
     </div>
   );
 }
+
+const DIALOG_DEMOS = ["Default", "Destructive", "Loading", "Error"] as const;
+type DialogDemo = (typeof DIALOG_DEMOS)[number];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
