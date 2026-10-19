@@ -11,6 +11,7 @@ import type {
   ListingImage,
   ListingImageCreate,
   ListingUpdate,
+  MyListing,
 } from "./types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -101,6 +102,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const getListings = () => request<Listing[]>("/listings");
+
+// The current user's own listings (active, drafts, and sold), newest first. The only way to
+// list drafts.
+export const getMyListings = () => request<MyListing[]>("/listings/mine");
 
 export const getCategories = () => request<Category[]>("/categories");
 

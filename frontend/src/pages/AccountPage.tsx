@@ -1,3 +1,5 @@
+import { ChevronRight, List } from "lucide-react";
+import { Link } from "react-router";
 import { Button } from "../components/Button";
 import { useAuth } from "../auth/useAuth";
 import { useLogout } from "../auth/useLogout";
@@ -27,6 +29,26 @@ export function AccountPage() {
       ) : (
         <p className="text-body text-text-muted">We couldn't load your profile right now.</p>
       )}
+
+      <Link
+        to="/account/listings"
+        className={
+          "flex min-h-16 w-full items-center gap-3 rounded-md border border-border bg-surface p-3 " +
+          "hover:bg-bg focus-visible:outline-2 focus-visible:outline-offset-2 " +
+          "focus-visible:outline-accent lg:max-w-md"
+        }
+      >
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+          <List aria-hidden className="size-5" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-sm font-semibold text-text">My listings</span>
+          <span className="text-caption text-text-muted">
+            Your active listings, drafts, and sold items
+          </span>
+        </span>
+        <ChevronRight aria-hidden className="size-5 shrink-0 text-text-muted" />
+      </Link>
 
       <div className="w-full lg:max-w-xs">
         <Button variant="danger" onClick={logout}>
