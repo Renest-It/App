@@ -1,19 +1,22 @@
 import type { ReactNode } from "react";
 
-// A centered icon, heading, and message with an action below: the listing pages' not-found
-// and error states.
+// A centered icon, heading, and message with an optional action below: the listing pages'
+// not-found, error, and empty states.
 export function CenterState({
   icon,
   title,
   body,
   danger = false,
+  heading: Heading = "h1",
   children,
 }: {
   icon: ReactNode;
   title: string;
   body: string;
   danger?: boolean;
-  children: ReactNode;
+  // h2 when the page already has its own h1 (My Listings' empty tabs).
+  heading?: "h1" | "h2";
+  children?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
@@ -25,7 +28,7 @@ export function CenterState({
       >
         {icon}
       </div>
-      <h1 className="font-display text-lg font-bold text-text">{title}</h1>
+      <Heading className="font-display text-lg font-bold text-text">{title}</Heading>
       <p className="text-body max-w-xs text-text-muted">{body}</p>
       {children}
     </div>
