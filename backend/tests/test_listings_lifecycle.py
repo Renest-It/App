@@ -236,7 +236,7 @@ def test_detail_never_includes_the_seller_email(client, seller, other, create, a
 
 def test_draft_never_appears_in_the_feed(client, seller, create):
     listing = create()
-    ids = [item["id"] for item in client.get("/listings", headers=seller).json()]
+    ids = [item["id"] for item in client.get("/listings", headers=seller).json()["items"]]
     assert listing["id"] not in ids
 
 
@@ -244,7 +244,7 @@ def test_feed_cover_is_the_position_0_photo(client, seller, create, add_photos):
     listing = create()
     paths = add_photos(listing["id"], [1, 0, 2])
     client.post(f"/listings/{listing['id']}/publish", headers=seller)
-    [item] = client.get("/listings", headers=seller).json()
+    [item] = client.get("/listings", headers=seller).json()["items"]
     assert item["cover_image_url"] == STORAGE_PUBLIC + paths[1]
 
 
@@ -253,5 +253,5 @@ def test_feed_cover_is_null_without_a_position_0_photo(client, seller, db_sessio
     listing = create()
     db_session.get(Listing, uuid.UUID(listing["id"])).status = "active"
     db_session.commit()
-    [item] = client.get("/listings", headers=seller).json()
+    [item] = client.get("/listings", headers=seller).json()["items"]
     assert item["cover_image_url"] is None

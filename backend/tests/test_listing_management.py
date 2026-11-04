@@ -89,7 +89,7 @@ def row(db_session, listing_id: str) -> Listing | None:
 
 
 def feed_ids(client, headers) -> list[str]:
-    return [listing["id"] for listing in client.get("/listings", headers=headers).json()]
+    return [listing["id"] for listing in client.get("/listings", headers=headers).json()["items"]]
 
 
 # --- every action: owner-only -----------------------------------------------------------------

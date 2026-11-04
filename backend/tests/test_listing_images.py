@@ -487,7 +487,7 @@ def test_deleting_the_cover_makes_the_next_photo_the_cover(client, seller, with_
     assert delete_photo(client, seller, listing_id, ids[0]).status_code == 204
     images = client.get(f"/listings/{listing_id}", headers=seller).json()["images"]
     assert [(i["id"], i["position"]) for i in images] == [(ids[1], 0), (ids[2], 1)]
-    feed = client.get("/listings", headers=seller).json()
+    feed = client.get("/listings", headers=seller).json()["items"]
     cover = next(item["cover_image_url"] for item in feed if item["id"] == listing_id)
     assert cover == images[0]["url"]
 

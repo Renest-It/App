@@ -57,7 +57,7 @@ def test_data_routes_work_with_a_token(make_token):
     headers = {"Authorization": f"Bearer {make_token()}"}
 
     listings = client.get("/listings", headers=headers)
-    assert listings.status_code == 200 and isinstance(listings.json(), list)
+    assert listings.status_code == 200 and isinstance(listings.json()["items"], list)
 
     categories = client.get("/categories", headers=headers)
     assert categories.status_code == 200
