@@ -164,15 +164,51 @@ seed(
 // those two fall on either side of the boundary between pages 1 and 2, which exercises the
 // (created_at, id) tiebreaker.
 const FEED_TITLES = [
-  "Desk chair", "Twin XL sheets", "Microwave", "Floor lamp", "Bean bag chair",
-  "Organic Chemistry textbook", "Rain jacket", "Shower caddy", "Monitor stand", "Coffee maker",
-  "Wall mirror", "Bluetooth speaker", "Under-bed storage bins", "Winter coat", "Rice cooker",
-  "Area rug", "Graphing calculator", "Desk organizer", "String lights", "Electric kettle",
-  "Shoe rack", "Yoga mat", "Mini whiteboard", "Laundry hamper", "Noise-cancelling headphones",
-  "Throw blanket", "Bike lock", "Bedside shelf", "Macroeconomics textbook", "Ironing board",
-  "Fan", "Hoodie", "Toaster", "Bookends", "Laptop stand", "Dish rack", "Tapestry",
-  "Accounting textbook", "Over-door hooks", "Mattress topper", "Backpack", "Air fryer",
-  "Picture frames", "Webcam", "Storage ottoman",
+  "Desk chair",
+  "Twin XL sheets",
+  "Microwave",
+  "Floor lamp",
+  "Bean bag chair",
+  "Organic Chemistry textbook",
+  "Rain jacket",
+  "Shower caddy",
+  "Monitor stand",
+  "Coffee maker",
+  "Wall mirror",
+  "Bluetooth speaker",
+  "Under-bed storage bins",
+  "Winter coat",
+  "Rice cooker",
+  "Area rug",
+  "Graphing calculator",
+  "Desk organizer",
+  "String lights",
+  "Electric kettle",
+  "Shoe rack",
+  "Yoga mat",
+  "Mini whiteboard",
+  "Laundry hamper",
+  "Noise-cancelling headphones",
+  "Throw blanket",
+  "Bike lock",
+  "Bedside shelf",
+  "Macroeconomics textbook",
+  "Ironing board",
+  "Fan",
+  "Hoodie",
+  "Toaster",
+  "Bookends",
+  "Laptop stand",
+  "Dish rack",
+  "Tapestry",
+  "Accounting textbook",
+  "Over-door hooks",
+  "Mattress topper",
+  "Backpack",
+  "Air fryer",
+  "Picture frames",
+  "Webcam",
+  "Storage ottoman",
 ];
 const FEED_TIE_INDEX = 16; // this listing and the next share one created_at
 FEED_TITLES.forEach((title, i) => {
@@ -427,7 +463,10 @@ export const handlers = [
     const rawLimit = params.get("limit");
     const limit = rawLimit === null ? FEED_DEFAULT_LIMIT : Number(rawLimit);
     if (!/^\d+$/.test(rawLimit ?? "20") || limit < 1 || limit > FEED_MAX_LIMIT) {
-      return queryValidationError("limit", `Input should be an integer from 1 to ${FEED_MAX_LIMIT}`);
+      return queryValidationError(
+        "limit",
+        `Input should be an integer from 1 to ${FEED_MAX_LIMIT}`,
+      );
     }
 
     const rawCursor = params.get("cursor");
