@@ -162,15 +162,20 @@ def create_listing(
     return new_listing
 
 
-def feed_query(db: Session, position: FeedPosition | None, limit: int):
-    """Active listings, newest first, strictly after `position`: the shape ix_listings_feed
-    serves (ADR 0011). Fetches limit + 1 rows so the caller can tell whether a next page exists.
+def feed_query(
+    db: Session, position: FeedPosition | None, limit: int, category_id: int | None = None
+):
+    """Active listings, newest first, strictly after `position`, optionally in one category: the
+    shape the feed indexes serve (ADR 0011). Fetches limit + 1 rows so the caller can tell
+    whether a next page exists.
     """
     query = (
         db.query(Listing)
         .options(joinedload(Listing.category), selectinload(Listing.images))
         .filter(Listing.status == "active")
     )
+    if category_id is not None:
+        query = query.filter(Listing.category_id == category_id)
     if position is not None:
         # A row comparison, so ties on created_at are broken by id and the index can start
         # the scan at the cursor.
@@ -184,12 +189,23 @@ def feed_query(db: Session, position: FeedPosition | None, limit: int):
 def list_listings(
     cursor: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=50),
+    category: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    position = decode_cursor(cursor) if cursor is not None else None
-    rows = feed_query(db, position, limit).all()
+    # The category is checked before the cursor: the filter decides which cursors are valid.
+    category_id = None
+    if category is not None:
+        category_id = db.query(Category.id).filter(Category.slug == category).scalar()
+        if category_id is None:
+            raise _unknown_category()
+    # A cursor only works under the filter it was issued with (E5.1, ADR 0011).
+    filters = {"category": category} if category is not None else {}
+    position = decode_cursor(cursor, filters) if cursor is not None else None
+    rows = feed_query(db, position, limit, category_id).all()
     page = rows[:limit]
-    next_cursor = encode_cursor(page[-1].created_at, page[-1].id) if len(rows) > limit else None
+    next_cursor = (
+        encode_cursor(page[-1].created_at, page[-1].id, filters) if len(rows) > limit else None
+    )
     return ListingsPage(
         items=[ListingListItem(**_list_item_fields(listing)) for listing in page],
         next_cursor=next_cursor,

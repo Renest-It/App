@@ -294,15 +294,22 @@ One listing, with its photos in order and its seller.
 
 ## `GET /listings`
 
-The home feed: **active** listings, newest first, one page at a time (E4, ADR 0011). Drafts
-and sold listings never appear, on any page.
+The home feed: **active** listings, newest first, one page at a time (E4, ADR 0011),
+optionally in one category (E5.1). Drafts and sold listings never appear, on any page.
+
+```
+GET /listings                              first page, every category
+GET /listings?category=furniture           first page, furniture only
+GET /listings?category=furniture&cursor=…  the next furniture page
+```
 
 **Query parameters**
 
 | Parameter | Default | Rules |
 |---|---|---|
 | `limit` | `20` | Integer, **1–50**. Anything else is `422` (FastAPI's default `{"detail": [...]}` body). It's rejected, not clamped, so client bugs show up. |
-| `cursor` | none | Omit for the first page. Otherwise, the `next_cursor` from the previous response, **sent back unchanged**. |
+| `cursor` | none | Omit for the first page. Otherwise, the `next_cursor` from the previous response, **sent back unchanged**, with the same `category`. |
+| `category` | none | A category **slug** from `GET /categories`, e.g. `furniture`, matched exactly (`Furniture` and an empty value are unknown). Omit for every category. Anything that isn't a slug is `422 unknown_category`. |
 
 **Response: `200 OK`**
 
@@ -334,17 +341,21 @@ and sold listings never appear, on any page.
   from the first page. A listing sold or deleted mid-scroll simply doesn't appear on later pages.
 - **Cursors are opaque.** Clients store them and send them back unchanged; they never decode or
   build one. The server can change what's inside without changing this contract.
-- **Filters (E5):** a cursor only works with the filter it was issued under. When the filter
-  changes, the client drops its cursor and loaded pages and requests the first page again
-  without a `cursor`. E4 has no filter yet, so every cursor is issued under "no filter".
+- **Filters:** a cursor only works with the filter it was issued under, and the server
+  enforces it. A furniture cursor sent with `category=kitchen`, without `category`, or an
+  unfiltered cursor sent with `category`, is `422 invalid_cursor`. So when the filter changes,
+  the client drops its cursor and loaded pages and requests the first page again without a
+  `cursor`. Cursors issued without a filter (including every E4 cursor) stay valid without one.
 - `cover_image_url` is the URL of the photo at position `0`, or `null` when the listing has no
   photo there (for example, listings created before E2). The UI shows a placeholder.
-- An empty feed is `{ "items": [], "next_cursor": null }`, not an error.
+- An empty feed is `{ "items": [], "next_cursor": null }`, not an error. That includes a real
+  category with no active listings.
 
 | Status | `code` | When |
 |---|---|---|
 | `200` | — | Always for a valid request, including when the feed is empty |
-| `422` | `invalid_cursor` | `cursor` isn't one the server issued, is corrupted (copy-paste, stale bookmark), is from an older cursor format, or was issued under a different filter. The client should drop it and reload the first page. |
+| `422` | `unknown_category` | `category` isn't an existing slug (exact match). Checked before `cursor`, so it's reported even if the cursor is also bad. |
+| `422` | `invalid_cursor` | `cursor` isn't one the server issued, is corrupted (copy-paste, stale bookmark), is from an older cursor format, or was issued under a different filter (another `category`, or with/without one). The client should drop it and reload the first page. |
 | `422` | — (`detail`) | `limit` missing a value, not an integer, or outside 1–50 |
 
 **Changed in E4:** this endpoint used to return a bare array of every active listing. Until E4.3
