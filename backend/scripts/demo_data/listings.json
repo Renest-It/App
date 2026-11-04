@@ -1,0 +1,832 @@
+{
+  "sellers": [
+    {
+      "key": "maya",
+      "display_name": "Maya Thompson"
+    },
+    {
+      "key": "jordan",
+      "display_name": "Jordan Lee"
+    },
+    {
+      "key": "priya",
+      "display_name": "Priya Patel"
+    },
+    {
+      "key": "marcus",
+      "display_name": "Marcus Johnson"
+    },
+    {
+      "key": "elena",
+      "display_name": "Elena García"
+    },
+    {
+      "key": "sam",
+      "display_name": "Sam Whitaker"
+    }
+  ],
+  "listings": [
+    {
+      "slug": "kallax-shelf",
+      "seller": "jordan",
+      "title": "IKEA Kallax shelf, 2x4, white",
+      "description": "Eight cubes, great as a bookshelf or room divider. A couple of small scuffs on one side. Already taken apart and ready to carry.",
+      "price_cents": 4500,
+      "category": "furniture",
+      "status": "active",
+      "age_hours": 1,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1617283423505-6fb9b01f247d?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8d2hpdGUlMjBjdWJlJTIwYm9va3NoZWxmfGVufDF8MHx8fDE3OTM4MjczMzl8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Avery Evans on Unsplash",
+          "page": "https://unsplash.com/photos/black-and-silver-camera-on-white-wooden-shelf-rT4XVyJSBKs"
+        }
+      ]
+    },
+    {
+      "slug": "campbell-biology",
+      "seller": "priya",
+      "title": "Campbell Biology, 12th edition",
+      "description": "Used for BIO 201 and 202. Some highlighting in the first ten chapters, otherwise clean. No access code.",
+      "price_cents": 4500,
+      "category": "textbooks",
+      "status": "active",
+      "age_hours": 16,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1530026186672-2cd00ffc50fe?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8YmlvbG9neSUyMHRleHRib29rfGVufDF8MHx8fDE3OTM4MjczMzl8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Robina Weermeijer on Unsplash",
+          "page": "https://unsplash.com/photos/human-heart-illustration-z8_-Fmfz06c"
+        }
+      ]
+    },
+    {
+      "slug": "creighton-hoodie",
+      "seller": "marcus",
+      "title": "Creighton hoodie, size M",
+      "description": "Navy blue, worn a handful of times. Bought it at the bookstore and it's a little big on me.",
+      "price_cents": 2000,
+      "category": "clothing",
+      "status": "active",
+      "age_hours": 32,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1641377060957-313a7a1e85a2?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8NXx8bmF2eSUyMGJsdWUlMjBob29kaWV8ZW58MXwwfHx8MTc5MzgyNzM0MHww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Bima Utomo on Unsplash",
+          "page": "https://unsplash.com/photos/a-pair-of-blue-sweatpants-laying-on-top-of-a-table-1UIHrZZ65dA"
+        }
+      ]
+    },
+    {
+      "slug": "keurig",
+      "seller": "elena",
+      "title": "Keurig K-Mini coffee maker",
+      "description": "Single cup, works perfectly. Descaled last week. Comes with a reusable pod filter so you don't have to buy K-Cups.",
+      "price_cents": 3000,
+      "category": "kitchen",
+      "status": "active",
+      "age_hours": 47,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1641154650778-72db973d97ac?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8NHx8c2luZ2xlJTIwc2VydmUlMjBjb2ZmZWUlMjBtYWtlcnxlbnwxfDB8fHwxNzkzODI3MzQxfDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Chris Lynch on Unsplash",
+          "page": "https://unsplash.com/photos/a-cup-of-coffee-sitting-on-top-of-a-coffee-maker-8yjFwNVryyQ"
+        }
+      ]
+    },
+    {
+      "slug": "hybrid-bike",
+      "seller": "maya",
+      "title": "21-speed hybrid bike",
+      "description": "Medium frame, good for getting downtown or along the riverfront trail. New tubes this fall. Lock not included.",
+      "price_cents": 12000,
+      "category": "other",
+      "status": "active",
+      "age_hours": 63,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1759047990878-b5a1e95f81fd?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8M3x8aHlicmlkJTIwYmljeWNsZXxlbnwxfDB8fHwxNzkzODI3MzQyfDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Marija Zaric on Unsplash",
+          "page": "https://unsplash.com/photos/a-dark-green-bicycle-parked-by-a-railing-i-5wzpRpfRk"
+        }
+      ]
+    },
+    {
+      "slug": "desk-chair",
+      "seller": "jordan",
+      "title": "Desk chair with lumbar support",
+      "description": "Mesh back, adjustable height and armrests. Much better than the dorm chair for long study nights.",
+      "price_cents": 3500,
+      "category": "furniture",
+      "status": "active",
+      "age_hours": 78,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1748721566880-9e8636f3e5c6?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8bWVzaCUyMG9mZmljZSUyMGNoYWlyfGVufDF8MHx8fDE3OTM4MjczNDJ8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Royaloak India on Unsplash",
+          "page": "https://unsplash.com/photos/a-comfortable-office-chair-is-shown-in-an-office-L0vgUvFhtLc"
+        }
+      ]
+    },
+    {
+      "slug": "monitor-27",
+      "seller": "priya",
+      "title": "27\" monitor, 1080p",
+      "description": "HDMI and DisplayPort. No dead pixels. Comes with the stand and power cable. Great second screen for a laptop.",
+      "price_cents": 7000,
+      "category": "electronics",
+      "status": "active",
+      "age_hours": 93,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1587831990711-23ca6441447b?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8Y29tcHV0ZXIlMjBtb25pdG9yJTIwZGVza3xlbnwxfDB8fHwxNzkzODI3MzQyfDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Sebastian Bednarek on Unsplash",
+          "page": "https://unsplash.com/photos/computer-workspace-with-keyboard-and-controllers-x2Z0uNj-Quo"
+        }
+      ]
+    },
+    {
+      "slug": "organic-chem",
+      "seller": "marcus",
+      "title": "Klein Organic Chemistry, 4th ed + solutions manual",
+      "description": "Both books for CHM 321 and 322. Solutions manual is barely used. Some pencil notes I can erase if you want.",
+      "price_cents": 5500,
+      "category": "textbooks",
+      "status": "active",
+      "age_hours": 109,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1628863353691-0071c8c1874c?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8Y2hlbWlzdHJ5JTIwdGV4dGJvb2t8ZW58MXwwfHx8MTc5MzgyNzM0M3ww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Vedrana Filipović on Unsplash",
+          "page": "https://unsplash.com/photos/round-clear-glass-on-white-paper-jxqTaXF5WmY"
+        }
+      ]
+    },
+    {
+      "slug": "winter-jacket",
+      "seller": "elena",
+      "title": "North Face winter jacket, women's S",
+      "description": "Black, very warm, made it through two Omaha winters. Zipper and pockets all fine.",
+      "price_cents": 6000,
+      "category": "clothing",
+      "status": "active",
+      "age_hours": 124,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1788736718737-3a8b758fb673?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8NHx8YmxhY2slMjBwdWZmZXIlMjBqYWNrZXR8ZW58MXwwfHx8MTc5MzgyNzM0NHww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Karsten Winegeart on Unsplash",
+          "page": "https://unsplash.com/photos/woman-on-black-sand-beach-in-vik-odT-xJYL4fw"
+        }
+      ]
+    },
+    {
+      "slug": "microwave",
+      "seller": "sam",
+      "title": "Microwave, 700W",
+      "description": "Compact enough for a dorm. Turntable and timer work. Clean inside.",
+      "price_cents": 3500,
+      "category": "kitchen",
+      "status": "active",
+      "age_hours": 140,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1585659722983-3a675dabf23d?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8bWljcm93YXZlJTIwb3ZlbnxlbnwxfDB8fHwxNzkzODI3MzQ0fDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Erik Mclean on Unsplash",
+          "page": "https://unsplash.com/photos/white-microwave-oven-turned-off-WtxE9xb0vQU"
+        }
+      ]
+    },
+    {
+      "slug": "bike-lock",
+      "seller": "jordan",
+      "title": "Kryptonite U-lock with two keys",
+      "description": "Heavy-duty lock with the mounting bracket. Both keys included.",
+      "price_cents": 1500,
+      "category": "other",
+      "status": "active",
+      "age_hours": 155,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1766979423674-2ff5aa8a9e06?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8NHx8YmlrZSUyMHUtbG9ja3xlbnwxfDB8fHwxNzkzODI3MzQ1fDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Thomas Hunter II on Unsplash",
+          "page": "https://unsplash.com/photos/a-cut-u-lock-lying-on-concrete-ground-K1sqEGiRJR8"
+        }
+      ]
+    },
+    {
+      "slug": "bed-risers",
+      "seller": "priya",
+      "title": "Bed risers, set of 4",
+      "description": "Adds about 8 inches of storage space under a twin XL bed. Two have outlets and USB ports.",
+      "price_cents": 800,
+      "category": "furniture",
+      "status": "active",
+      "age_hours": 170,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8ZG9ybSUyMGJlZHxlbnwxfDB8fHwxNzkzODI3MzQ1fDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Marcus Loke on Unsplash",
+          "page": "https://unsplash.com/photos/black-metal-bunk-bed-WQJvWU_HZFo"
+        }
+      ]
+    },
+    {
+      "slug": "bluetooth-speaker",
+      "seller": "marcus",
+      "title": "JBL Flip 5 Bluetooth speaker",
+      "description": "Waterproof and loud. Battery still lasts most of a day. Comes with the charging cable.",
+      "price_cents": 4000,
+      "category": "electronics",
+      "status": "active",
+      "age_hours": 186,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8cG9ydGFibGUlMjBibHVldG9vdGglMjBzcGVha2VyfGVufDF8MHx8fDE3OTM4MjczNDZ8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Nejc Soklič on Unsplash",
+          "page": "https://unsplash.com/photos/black-jbl-portable-speaker-on-brown-wooden-table-g5Y5kjOwGwQ"
+        }
+      ]
+    },
+    {
+      "slug": "calculus-stewart",
+      "seller": "elena",
+      "title": "Stewart Calculus: Early Transcendentals, 9th ed",
+      "description": "Covers MTH 245 through 247. Spine is a bit worn but every page is there.",
+      "price_cents": 4000,
+      "category": "textbooks",
+      "status": "active",
+      "age_hours": 201,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1632571401005-458e9d244591?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8bWF0aCUyMHRleHRib29rfGVufDF8MHx8fDE3OTM4MjczNDZ8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Anoushka Puri on Unsplash",
+          "page": "https://unsplash.com/photos/a-close-up-of-electronics-f1YfrZ1o2r8"
+        }
+      ]
+    },
+    {
+      "slug": "rain-boots",
+      "seller": "sam",
+      "title": "Yellow rain boots, women's size 8",
+      "description": "Bright yellow, worn one season, no leaks. Good for the walk to class in April.",
+      "price_cents": 1500,
+      "category": "clothing",
+      "status": "active",
+      "age_hours": 216,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1782773437608-60eba18dbf61?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8Z3JlZW4lMjByYWluJTIwYm9vdHN8ZW58MXwwfHx8MTc5MzgyNzM0Nnww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Chloë Forbes-Kindlen on Unsplash",
+          "page": "https://unsplash.com/photos/lifebuoy-and-yellow-rain-boots-visible-through-a-window-lVL8namhlJM"
+        }
+      ]
+    },
+    {
+      "slug": "air-fryer",
+      "seller": "maya",
+      "title": "Air fryer, 4 quart",
+      "description": "Makes fries, wings and reheated pizza way better than the microwave. Basket is nonstick and clean.",
+      "price_cents": 3500,
+      "category": "kitchen",
+      "status": "active",
+      "age_hours": 232,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1745846664210-756817e1b19c?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8M3x8YWlyJTIwZnJ5ZXJ8ZW58MXwwfHx8MTc5MzgyNzM0N3ww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Marc Pell on Unsplash",
+          "page": "https://unsplash.com/photos/tomatoes-and-kitchen-appliances-on-a-counter-GX__Pduezt4"
+        }
+      ]
+    },
+    {
+      "slug": "yoga-mat",
+      "seller": "priya",
+      "title": "Yoga mat with carrying strap",
+      "description": "6 mm thick, pink. Used for a semester of yoga at the Rasmussen Center.",
+      "price_cents": 1000,
+      "category": "other",
+      "status": "active",
+      "age_hours": 247,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1746796751590-a8c0f15d4900?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8cHVycGxlJTIweW9nYSUyMG1hdHxlbnwxfDB8fHwxNzkzODI3MzQ4fDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Andrea Stuart on Unsplash",
+          "page": "https://unsplash.com/photos/yoga-mat-weights-and-a-towel-ready-for-a-workout-zBYG9kzN-8s"
+        }
+      ]
+    },
+    {
+      "slug": "futon",
+      "seller": "marcus",
+      "title": "Futon, dark gray",
+      "description": "Folds flat into a full-size bed. Great for guests. You'll need a car or a friend with a truck.",
+      "price_cents": 6000,
+      "category": "furniture",
+      "status": "active",
+      "age_hours": 263,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1680971615878-18ce5b08c790?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8NHx8Z3JheSUyMGZ1dG9uJTIwc29mYXxlbnwxfDB8fHwxNzkzODI3MzQ4fDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Clay Banks on Unsplash",
+          "page": "https://unsplash.com/photos/a-living-room-with-wood-paneling-and-a-gray-couch-Flj2cFUgIuw"
+        }
+      ]
+    },
+    {
+      "slug": "graphing-calculator",
+      "seller": "elena",
+      "title": "TI-84 Plus CE graphing calculator",
+      "description": "Rechargeable, comes with the charging cable and slide cover. Allowed on every math exam I've taken.",
+      "price_cents": 6500,
+      "category": "electronics",
+      "status": "active",
+      "age_hours": 278,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1648201637025-1c77b9be3013?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8Z3JhcGhpbmclMjBjYWxjdWxhdG9yfGVufDF8MHx8fDE3OTM4MjczNDl8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Aaron Lefler on Unsplash",
+          "page": "https://unsplash.com/photos/a-calculator-and-a-pen-sitting-on-top-of-a-piece-of-paper-Vs6ip7fsld8"
+        }
+      ]
+    },
+    {
+      "slug": "microeconomics",
+      "seller": "sam",
+      "title": "Mankiw Principles of Microeconomics, 9th ed",
+      "description": "Required for ECO 203. Clean copy, no writing.",
+      "price_cents": 2500,
+      "category": "textbooks",
+      "status": "active",
+      "age_hours": 293,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1621863367744-7363895606b9?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8ZWNvbm9taWNzJTIwdGV4dGJvb2t8ZW58MXwwfHx8MTc5MzgyNzM0OXww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Tim Wildsmith on Unsplash",
+          "page": "https://unsplash.com/photos/white-printer-paper-on-brown-wooden-table-4yI-1Pk3Uzs"
+        }
+      ]
+    },
+    {
+      "slug": "formal-dress",
+      "seller": "maya",
+      "title": "Navy formal dress, size 6",
+      "description": "Floor length, worn once to a formal. Dry cleaned since.",
+      "price_cents": 3500,
+      "category": "clothing",
+      "status": "active",
+      "age_hours": 293,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/flagged/photo-1555298011-46f4fb066cc5?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8M3x8bmF2eSUyMGJsdWUlMjBnb3dufGVufDF8MHx8fDE3OTM4MjczNTB8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Leslie Jones on Unsplash",
+          "page": "https://unsplash.com/photos/woman-wearing-black-sweetheart-dress-walking-on-asphalt-pathway-XhimwxIEWIc"
+        }
+      ]
+    },
+    {
+      "slug": "pots-pans",
+      "seller": "jordan",
+      "title": "Pots and pans set",
+      "description": "Two pots, two frying pans and three lids. Nonstick still in good shape. Perfect for a first apartment.",
+      "price_cents": 2500,
+      "category": "kitchen",
+      "status": "active",
+      "age_hours": 324,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1584990347193-6bebebfeaeee?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8cG90cyUyMGFuZCUyMHBhbnN8ZW58MXwwfHx8MTc5MzgyNzM1MXww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Cooker King on Unsplash",
+          "page": "https://unsplash.com/photos/3-stainless-steel-cooking-pots-on-white-ceramic-tiles-AOVtEuU9UGc"
+        }
+      ]
+    },
+    {
+      "slug": "monstera-plant",
+      "seller": "priya",
+      "title": "Faux monstera plant",
+      "description": "About 3 feet tall in a white pot. Looks real and you can't kill it.",
+      "price_cents": 1500,
+      "category": "decor",
+      "status": "active",
+      "age_hours": 340,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1614887410788-e158d6efb3be?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8bW9uc3RlcmElMjBwbGFudCUyMHBvdHxlbnwxfDB8fHwxNzkzODI3MzUxfDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Pawel Czerwinski on Unsplash",
+          "page": "https://unsplash.com/photos/green-plant-in-white-ceramic-pot-MPfS0DmCFFE"
+        }
+      ]
+    },
+    {
+      "slug": "board-games",
+      "seller": "marcus",
+      "title": "Board games bundle: Catan and Codenames",
+      "description": "Both complete, all pieces counted. Good for floor game nights.",
+      "price_cents": 3000,
+      "category": "other",
+      "status": "active",
+      "age_hours": 355,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1629760946220-5693ee4c46ac?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8Ym9hcmQlMjBnYW1lJTIwcGllY2VzfGVufDF8MHx8fDE3OTM4MjczNTJ8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Nik Korba on Unsplash",
+          "page": "https://unsplash.com/photos/game-pieces-and-dice-on-board-3WceTBlUoMs"
+        }
+      ]
+    },
+    {
+      "slug": "bedside-table",
+      "seller": "elena",
+      "title": "Small bedside table with drawer",
+      "description": "White, fits next to a twin bed. One drawer and a shelf underneath.",
+      "price_cents": 1500,
+      "category": "furniture",
+      "status": "active",
+      "age_hours": 370,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1780042731951-3885599aafa9?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8NHx8d2hpdGUlMjBuaWdodHN0YW5kfGVufDF8MHx8fDE3OTM4MjczNTJ8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Margo Evardson on Unsplash",
+          "page": "https://unsplash.com/photos/a-white-bedroom-with-a-bed-dresser-and-teddy-bear-NouAMYGKtdk"
+        }
+      ]
+    },
+    {
+      "slug": "mechanical-keyboard",
+      "seller": "sam",
+      "title": "Mechanical keyboard, brown switches",
+      "description": "Full size with backlight. Quieter than blue switches, so your roommate won't hate you.",
+      "price_cents": 3000,
+      "category": "electronics",
+      "status": "active",
+      "age_hours": 386,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1632079003110-d694908500da?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8M3x8bWVjaGFuaWNhbCUyMGtleWJvYXJkfGVufDF8MHx8fDE3OTM4MjczNTJ8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by JL Cabrera on Unsplash",
+          "page": "https://unsplash.com/photos/a-computer-keyboard-sitting-on-top-of-a-wooden-table-4GzqVNX0TCQ"
+        }
+      ]
+    },
+    {
+      "slug": "psychology-myers",
+      "seller": "maya",
+      "title": "Myers Psychology, 13th ed",
+      "description": "For PSY 201. Light highlighting. Includes the study guide.",
+      "price_cents": 3000,
+      "category": "textbooks",
+      "status": "active",
+      "age_hours": 401,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1561993629-67302018480e?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8cHN5Y2hvbG9neSUyMGJvb2t8ZW58MXwwfHx8MTc5MzgyNzM1M3ww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Andrew Ebrahim on Unsplash",
+          "page": "https://unsplash.com/photos/a-close-up-of-a-book-shelf-with-books-on-it-Df_HHzSseEg"
+        }
+      ]
+    },
+    {
+      "slug": "suit-jacket",
+      "seller": "jordan",
+      "title": "Men's suit jacket, 40R",
+      "description": "Charcoal gray, good for career fair and interviews. Matching pants available too if you message me.",
+      "price_cents": 4000,
+      "category": "clothing",
+      "status": "active",
+      "age_hours": 417,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1498712938623-d2bee166c195?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8Y2hhcmNvYWwlMjBzdWl0JTIwamFja2V0fGVufDF8MHx8fDE3OTM4MjczNTR8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Andre Hunter on Unsplash",
+          "page": "https://unsplash.com/photos/person-holding-black-suit-jacket-button-ENyfrgkZb7M"
+        }
+      ]
+    },
+    {
+      "slug": "electric-kettle",
+      "seller": "priya",
+      "title": "Electric kettle",
+      "description": "Boils water in about three minutes. Auto shut-off. Great for tea, ramen and oatmeal.",
+      "price_cents": 1200,
+      "category": "kitchen",
+      "status": "active",
+      "age_hours": 432,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1738520420652-0c47cea3922b?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8ZWxlY3RyaWMlMjBrZXR0bGV8ZW58MXwwfHx8MTc5MzgyNzM1NHww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Gleb Paniotov on Unsplash",
+          "page": "https://unsplash.com/photos/a-black-coffee-pot-sitting-on-top-of-a-counter-JcQu6hlBUs8"
+        }
+      ]
+    },
+    {
+      "slug": "poster-set",
+      "seller": "marcus",
+      "title": "Framed poster set, 3 prints",
+      "description": "Three matching black frames with botanical prints. Hooks included.",
+      "price_cents": 1800,
+      "category": "decor",
+      "status": "active",
+      "age_hours": 447,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1653680360803-3fb2c01a5f6d?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8M3x8ZnJhbWVkJTIwYm90YW5pY2FsJTIwcHJpbnRzfGVufDF8MHx8fDE3OTM4MjczNTV8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by ALLAN LAINEZ on Unsplash",
+          "page": "https://unsplash.com/photos/a-wall-with-three-framed-pictures-hanging-on-it-MB1J7LjEM2A"
+        }
+      ]
+    },
+    {
+      "slug": "laundry-hamper",
+      "seller": "elena",
+      "title": "Laundry hamper with wheels",
+      "description": "Rolls down the hall to the laundry room so you don't have to carry it. Collapsible. Free, just come grab it before move-out.",
+      "price_cents": 0,
+      "category": "other",
+      "status": "active",
+      "age_hours": 463,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1582735689369-4fe89db7114c?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8bGF1bmRyeSUyMGJhc2tldHxlbnwxfDB8fHwxNzkzODI3MzU1fDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Annie Spratt on Unsplash",
+          "page": "https://unsplash.com/photos/white-textile-on-blue-plastic-laundry-basket-5TfCI4nj6B4"
+        }
+      ]
+    },
+    {
+      "slug": "folding-desk",
+      "seller": "sam",
+      "title": "Folding desk, 40 inch",
+      "description": "Sturdy metal frame, folds flat in seconds. Great for small rooms or as an extra table.",
+      "price_cents": 2500,
+      "category": "furniture",
+      "status": "active",
+      "age_hours": 478,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1772944780860-e99bd902d59a?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8c21hbGwlMjBkZXNrJTIwcm9vbXxlbnwxfDB8fHwxNzkzODI3MzU1fDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Yek Hostels on Unsplash",
+          "page": "https://unsplash.com/photos/desk-with-globe-plant-and-two-stools-8oZxNzURtu8"
+        }
+      ]
+    },
+    {
+      "slug": "headphones",
+      "seller": "maya",
+      "title": "Sony WH-1000XM4 noise-cancelling headphones",
+      "description": "Incredible for studying in loud places. Case and cables included. Ear pads in great shape.",
+      "price_cents": 12000,
+      "category": "electronics",
+      "status": "active",
+      "age_hours": 493,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1586343797367-c8942268df67?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8c29ueSUyMGhlYWRwaG9uZXN8ZW58MXwwfHx8MTc5MzgyNzM1Nnww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Vova Kondriianenko on Unsplash",
+          "page": "https://unsplash.com/photos/black-samsung-headphones-on-white-printer-paper-mpnA-Cgrzv8"
+        }
+      ]
+    },
+    {
+      "slug": "mcat-books",
+      "seller": "jordan",
+      "title": "Kaplan MCAT prep books, set of 7",
+      "description": "Full set, 2025 edition. Some practice problems done in pencil. Online access already used.",
+      "price_cents": 6000,
+      "category": "textbooks",
+      "status": "active",
+      "age_hours": 509,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8c3RhY2slMjBvZiUyMHN0dWR5JTIwYm9va3N8ZW58MXwwfHx8MTc5MzgyNzM1Nnww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Kimberly Farmer on Unsplash",
+          "page": "https://unsplash.com/photos/shallow-focus-photography-of-books-lUaaKCUANVI"
+        }
+      ]
+    },
+    {
+      "slug": "running-shoes",
+      "seller": "priya",
+      "title": "Nike running shoes, men's size 10",
+      "description": "Pegasus model, around 100 miles on them. Plenty of life left.",
+      "price_cents": 3000,
+      "category": "clothing",
+      "status": "active",
+      "age_hours": 524,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1611080027147-a1a0b6e05168?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8M3x8bmlrZSUyMHJ1bm5pbmclMjBzaG9lc3xlbnwxfDB8fHwxNzkzODI3MzU2fDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Miquel Parera on Unsplash",
+          "page": "https://unsplash.com/photos/black-and-white-nike-athletic-shoes-on-brown-sand-xag0YpBqNfQ"
+        }
+      ]
+    },
+    {
+      "slug": "blender",
+      "seller": "marcus",
+      "title": "Ninja blender",
+      "description": "Handles frozen fruit for smoothies easily. Includes the big pitcher and one to-go cup.",
+      "price_cents": 3000,
+      "category": "kitchen",
+      "status": "active",
+      "age_hours": 540,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1585237672814-8f85a8118bf6?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8YmxlbmRlciUyMHNtb290aGllfGVufDF8MHx8fDE3OTM4MjczNTd8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Andrea Niosi on Unsplash",
+          "page": "https://unsplash.com/photos/clear-glass-pitcher-with-sliced-fruits-LbJ_jSAepKM"
+        }
+      ]
+    },
+    {
+      "slug": "throw-blanket",
+      "seller": "elena",
+      "title": "Knit throw blanket, cream",
+      "description": "Super soft chunky knit. Washed and folded.",
+      "price_cents": 1000,
+      "category": "decor",
+      "status": "active",
+      "age_hours": 555,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1674475760738-8c7af859f821?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8MXx8Y3JlYW0lMjBrbml0JTIwYmxhbmtldHxlbnwxfDB8fHwxNzkzODI3MzU3fDA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Bearaby on Unsplash",
+          "page": "https://unsplash.com/photos/a-couch-with-a-blanket-on-top-of-it-VSRjzIj0148"
+        }
+      ]
+    },
+    {
+      "slug": "acoustic-guitar",
+      "seller": "sam",
+      "title": "Yamaha acoustic guitar",
+      "description": "Full size, plays well. Comes with a gig bag, a capo and spare strings.",
+      "price_cents": 9000,
+      "category": "other",
+      "status": "active",
+      "age_hours": 570,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1647265194908-6815badcc397?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8M3x8YWNvdXN0aWMlMjBndWl0YXJ8ZW58MXwwfHx8MTc5MzgyNzM1OHww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Harshveen Kalsi on Unsplash",
+          "page": "https://unsplash.com/photos/a-close-up-of-an-acoustic-guitar-on-a-black-background-kyCFXYIO0LA"
+        }
+      ]
+    },
+    {
+      "slug": "bean-bag",
+      "seller": "maya",
+      "title": "Bean bag chair",
+      "description": "Large, black, comfy for gaming or reading. Holds its shape well.",
+      "price_cents": 2000,
+      "category": "furniture",
+      "status": "active",
+      "age_hours": 586,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1633286382418-4181cb81a6d0?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8NHx8YmVhbiUyMGJhZyUyMGNoYWlyfGVufDF8MHx8fDE3OTM4MjczNTh8MA&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Anand Thakur on Unsplash",
+          "page": "https://unsplash.com/photos/a-living-room-filled-with-furniture-and-a-blue-couch-X4N4izJmHFQ"
+        }
+      ]
+    },
+    {
+      "slug": "ethics-reader",
+      "seller": "priya",
+      "title": "Intro to Ethics course reader",
+      "description": "Required reader for PHL 250. Some notes in the margins that are actually helpful.",
+      "price_cents": 1000,
+      "category": "textbooks",
+      "status": "active",
+      "age_hours": 601,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1594305342010-1f62e803490f?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8NXx8cGhpbG9zb3BoeSUyMGJvb2t8ZW58MXwwfHx8MTc5MzgyNzM1OXww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by Nicolas HIPPERT on Unsplash",
+          "page": "https://unsplash.com/photos/white-book-page-on-white-table-SVgX47QIUlc"
+        }
+      ]
+    },
+    {
+      "slug": "graphic-tees",
+      "seller": "marcus",
+      "title": "Bundle of 5 t-shirts, size L",
+      "description": "White and black basics plus a few campus event shirts. All washed, no stains.",
+      "price_cents": 1000,
+      "category": "clothing",
+      "status": "active",
+      "age_hours": 617,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1693443687750-611ad77f3aba?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8Mnx8Zm9sZGVkJTIwdC1zaGlydHN8ZW58MXwwfHx8MTc5MzgyNzM1OXww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by tian dayong on Unsplash",
+          "page": "https://unsplash.com/photos/two-black-and-white-shirts-sitting-next-to-each-other-pZfRXQhi1eg"
+        }
+      ]
+    },
+    {
+      "slug": "dish-rack",
+      "seller": "elena",
+      "title": "Dish rack and utensil holder",
+      "description": "Fits next to a dorm sink. Drip tray included. Free, I'm moving and can't take it.",
+      "price_cents": 0,
+      "category": "kitchen",
+      "status": "active",
+      "age_hours": 632,
+      "photos": [
+        {
+          "source": "https://images.unsplash.com/photo-1549675613-2001a9672b74?ixid=M3wxMTIzNzY5fDB8MXxzZWFyY2h8NXx8ZGlzaCUyMGRyeWluZyUyMHJhY2t8ZW58MXwwfHx8MTc5MzgyNzM2MHww&ixlib=rb-4.1.0&w=2000&q=85&fm=jpg",
+          "credit": "Photo by CHUTTERSNAP on Unsplash",
+          "page": "https://unsplash.com/photos/two-black-ceramic-plates-and-white-ceramic-plate-on-stainless-steel-plate-rack-nYxwYhUiwJQ"
+        }
+      ]
+    },
+    {
+      "slug": "standing-desk",
+      "seller": "jordan",
+      "title": "Standing desk converter",
+      "description": "Sits on top of a regular desk and lifts up to standing height.",
+      "price_cents": 5000,
+      "category": "furniture",
+      "status": "sold",
+      "age_hours": 35,
+      "photos": []
+    },
+    {
+      "slug": "anatomy-lab-manual",
+      "seller": "priya",
+      "title": "Anatomy & Physiology lab manual",
+      "description": "For BIO 205. A few labs filled in.",
+      "price_cents": 2000,
+      "category": "textbooks",
+      "status": "sold",
+      "age_hours": 410,
+      "photos": []
+    },
+    {
+      "slug": "rice-cooker",
+      "seller": "marcus",
+      "title": "Rice cooker, 6 cup",
+      "description": "Cooks perfect rice every time. Keeps it warm afterwards.",
+      "price_cents": 1500,
+      "category": "kitchen",
+      "status": "sold",
+      "age_hours": 640,
+      "photos": []
+    },
+    {
+      "slug": "box-fan",
+      "seller": "elena",
+      "title": "Box fan, 20 inch",
+      "description": "Three speeds. A lifesaver in the dorms without AC in August.",
+      "price_cents": 1500,
+      "category": "other",
+      "status": "sold",
+      "age_hours": 190,
+      "photos": []
+    },
+    {
+      "slug": "storage-ottoman",
+      "seller": "sam",
+      "title": "Storage ottoman",
+      "description": "Doubles as a seat and storage for blankets.",
+      "price_cents": 2500,
+      "category": "furniture",
+      "status": "draft",
+      "age_hours": 80,
+      "photos": []
+    },
+    {
+      "slug": "printer",
+      "seller": "maya",
+      "title": "HP DeskJet printer",
+      "description": "Prints and scans. Some ink left in both cartridges.",
+      "price_cents": 3000,
+      "category": "electronics",
+      "status": "draft",
+      "age_hours": 470,
+      "photos": []
+    },
+    {
+      "slug": "ironing-board",
+      "seller": "jordan",
+      "title": "Iron and ironing board",
+      "description": "Full-size board and a steam iron.",
+      "price_cents": 1500,
+      "category": "other",
+      "status": "draft",
+      "age_hours": 645,
+      "photos": []
+    },
+    {
+      "slug": "wall-clock",
+      "seller": "priya",
+      "title": "Wall clock",
+      "description": "Simple round clock, silent second hand.",
+      "price_cents": 800,
+      "category": "decor",
+      "status": "draft",
+      "age_hours": 290,
+      "photos": []
+    }
+  ]
+}

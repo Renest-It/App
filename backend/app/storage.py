@@ -47,6 +47,21 @@ def create_signed_upload_url(storage_path: str) -> str:
         raise StorageUnavailable("Could not create a signed upload URL") from e
 
 
+def upload_object(storage_path: str, data: bytes, content_type: str) -> None:
+    """Upload a file straight to `storage_path` with the service key, replacing any file there.
+    Only for scripts (the demo seed): the app's users upload through signed URLs instead."""
+    try:
+        response = httpx.post(
+            _storage_url(f"/object/{LISTING_PHOTOS_BUCKET}/{storage_path}"),
+            headers={**_service_headers(), "Content-Type": content_type, "x-upsert": "true"},
+            content=data,
+            timeout=_TIMEOUT,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as e:
+        raise StorageUnavailable("Could not upload to storage") from e
+
+
 def object_exists(storage_path: str) -> bool:
     """Whether a file has been uploaded at `storage_path`.
 
@@ -90,6 +105,11 @@ def delete_objects(storage_paths: list[str]) -> None:
 def remove_folder(folder: str) -> None:
     """Remove every file directly inside `folder` (e.g. `listings/{listing_id}`), including
     photos that were uploaded but never recorded in listing_images."""
+    delete_objects([f"{folder}/{name}" for name in list_folder(folder)])
+
+
+def list_folder(folder: str) -> list[str]:
+    """The names of the files directly inside `folder` (e.g. `listings/{listing_id}`)."""
     try:
         response = httpx.post(
             _storage_url(f"/object/list/{LISTING_PHOTOS_BUCKET}"),
@@ -100,7 +120,6 @@ def remove_folder(folder: str) -> None:
             timeout=_TIMEOUT,
         )
         response.raise_for_status()
-        names = [entry["name"] for entry in response.json()]
+        return [entry["name"] for entry in response.json()]
     except (httpx.HTTPError, KeyError, TypeError, ValueError) as e:
         raise StorageUnavailable("Could not list the folder in storage") from e
-    delete_objects([f"{folder}/{name}" for name in names])
