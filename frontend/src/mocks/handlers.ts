@@ -8,7 +8,7 @@
 // State lives in memory and resets on page reload. Routes not handled here (e.g. /me) go to
 // the real API as usual.
 
-import { http, HttpResponse } from "msw";
+import { delay, http, HttpResponse } from "msw";
 import type {
   Category,
   ImageContentType,
@@ -451,14 +451,41 @@ function queryValidationError(param: string, msg: string) {
   );
 }
 
+// Dev-only switches for testing the feed's loading and error states (E4.3). Set one from the
+// browser console, then scroll the feed:
+//   sessionStorage.setItem("renest:mock-feed", "slow")        every response waits 1.5 s
+//   sessionStorage.setItem("renest:mock-feed", "fail-once")   the next page after the first fails
+//   sessionStorage.setItem("renest:mock-feed", "bad-cursor")  the next page after the first is a 422 invalid_cursor
+// "fail-once" and "bad-cursor" clear themselves after one use. Remove "slow" with
+// sessionStorage.removeItem("renest:mock-feed").
+const FEED_SWITCH_KEY = "renest:mock-feed";
+
+function takeFeedSwitch(hasCursor: boolean): "slow" | "fail" | "bad-cursor" | null {
+  const value = sessionStorage.getItem(FEED_SWITCH_KEY);
+  if (value === "slow") return "slow";
+  if (!hasCursor) return null;
+  if (value === "fail-once" || value === "bad-cursor") {
+    sessionStorage.removeItem(FEED_SWITCH_KEY);
+    return value === "fail-once" ? "fail" : "bad-cursor";
+  }
+  return null;
+}
+
 // --- handlers ------------------------------------------------------------------------------
 
 export const handlers = [
   http.get(`${API}/categories`, () => HttpResponse.json(CATEGORIES)),
 
-  http.get(`${API}/listings`, ({ request }) => {
+  http.get(`${API}/listings`, async ({ request }) => {
     currentUser(request); // so your own seeded active listing shows in the feed too
     const params = new URL(request.url).searchParams;
+
+    const feedSwitch = takeFeedSwitch(params.has("cursor"));
+    if (feedSwitch === "slow") await delay(1500);
+    if (feedSwitch === "fail") return HttpResponse.error();
+    if (feedSwitch === "bad-cursor") {
+      return error(422, "invalid_cursor", "This page link is no longer valid. Reload the feed.");
+    }
 
     const rawLimit = params.get("limit");
     const limit = rawLimit === null ? FEED_DEFAULT_LIMIT : Number(rawLimit);
