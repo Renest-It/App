@@ -11,6 +11,7 @@ import type {
   ListingImage,
   ListingImageCreate,
   ListingUpdate,
+  ListingsPage,
   MyListing,
 } from "./types";
 
@@ -101,7 +102,23 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return response.json();
 }
 
-export const getListings = () => request<Listing[]>("/listings");
+// One page of the home feed (docs/api/listings.md). Omit `cursor` for the first page.
+export const getListingsPage = ({ cursor, limit }: { cursor?: string; limit?: number } = {}) => {
+  const params = new URLSearchParams();
+  if (cursor) params.set("cursor", cursor);
+  if (limit !== undefined) params.set("limit", String(limit));
+  const query = params.toString();
+  return request<ListingsPage>(query ? `/listings?${query}` : "/listings");
+};
+
+// The first page of the feed as a plain array, for ListPage until E4.3 replaces it with
+// getListingsPage(). Accepts both response shapes so the mocks (E4.1), the backend (E4.2), and
+// the frontend (E4.3) can merge in any order.
+export const getListings = async (): Promise<Listing[]> => {
+  const body = await request<Listing[] | ListingsPage>("/listings");
+  // TODO(E4.3): remove the array branch once GET /listings returns the envelope everywhere.
+  return Array.isArray(body) ? body : body.items;
+};
 
 // The current user's own listings (active, drafts, and sold), newest first. The only way to
 // list drafts.

@@ -1,4 +1,4 @@
-// Mock ReNest API for E2 and E3, following docs/api/listings.md. Turn it on with
+// Mock ReNest API for E2, E3, and E4's paginated feed, following docs/api/listings.md. Turn it on with
 // VITE_USE_MOCKS=true in frontend/.env. When the real endpoints land (E3.2/E3.3), turn the
 // mocks off: no component changes are needed.
 //
@@ -158,6 +158,40 @@ seed(
   },
   0, // cover_image_url: null, like listings from before E2
 );
+// A multi-page feed (E4.1): 45 more active listings, so with the defaults (limit 20) the feed
+// spans at least three pages and E4.3 can build real scrolling against the mocks. Each has its
+// own created_at, one hour apart, except two that share a timestamp. With one signed-in user,
+// those two fall on either side of the boundary between pages 1 and 2, which exercises the
+// (created_at, id) tiebreaker.
+const FEED_TITLES = [
+  "Desk chair", "Twin XL sheets", "Microwave", "Floor lamp", "Bean bag chair",
+  "Organic Chemistry textbook", "Rain jacket", "Shower caddy", "Monitor stand", "Coffee maker",
+  "Wall mirror", "Bluetooth speaker", "Under-bed storage bins", "Winter coat", "Rice cooker",
+  "Area rug", "Graphing calculator", "Desk organizer", "String lights", "Electric kettle",
+  "Shoe rack", "Yoga mat", "Mini whiteboard", "Laundry hamper", "Noise-cancelling headphones",
+  "Throw blanket", "Bike lock", "Bedside shelf", "Macroeconomics textbook", "Ironing board",
+  "Fan", "Hoodie", "Toaster", "Bookends", "Laptop stand", "Dish rack", "Tapestry",
+  "Accounting textbook", "Over-door hooks", "Mattress topper", "Backpack", "Air fryer",
+  "Picture frames", "Webcam", "Storage ottoman",
+];
+const FEED_TIE_INDEX = 16; // this listing and the next share one created_at
+FEED_TITLES.forEach((title, i) => {
+  const hoursBefore = i > FEED_TIE_INDEX ? i - 1 : i;
+  seed(
+    {
+      id: `00000000-0000-4000-8000-${(0xf000 + i).toString(16).padStart(12, "0")}`,
+      title,
+      description: null,
+      price_cents: [0, 500, 1200, 2500, 4000, 800, 1500][i % 7],
+      category_id: (i % CATEGORIES.length) + 1,
+      status: "active",
+      seller: OTHER_SELLER,
+      created_at: new Date(Date.UTC(2026, 8, 26, 12) - hoursBefore * 3_600_000).toISOString(),
+    },
+    i % 5 === 4 ? 0 : 1,
+  );
+});
+
 // Someone else's draft: every request about it must get 404.
 seed(
   {
@@ -319,6 +353,68 @@ function findOwned(request: Request, id: string): Lookup {
   return { listing };
 }
 
+// --- feed pagination (E4.1, docs/api/listings.md) ---------------------------------------
+//
+// Same cursor format as the backend (ADR 0011): base64url, no padding, of
+// {"v":1,"t":<created_at>,"id":<id>,"f":{}}. Clients treat it as opaque; matching the format
+// here only means E4.3 can test invalid-cursor handling against the mocks.
+
+const FEED_DEFAULT_LIMIT = 20;
+const FEED_MAX_LIMIT = 50;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+interface FeedCursor {
+  t: string;
+  id: string;
+}
+
+function encodeCursor(listing: MockListing): string {
+  const json = JSON.stringify({ v: 1, t: listing.created_at, id: listing.id, f: {} });
+  return btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+// null for anything the server can't use: the API answers 422 invalid_cursor.
+function decodeCursor(cursor: string): FeedCursor | null {
+  try {
+    const base64 = cursor.replace(/-/g, "+").replace(/_/g, "/");
+    const data = JSON.parse(atob(base64 + "=".repeat((4 - (base64.length % 4)) % 4)));
+    if (typeof data !== "object" || data === null || Array.isArray(data)) return null;
+    if (data.v !== 1) return null;
+    if (typeof data.t !== "string" || Number.isNaN(Date.parse(data.t))) return null;
+    if (typeof data.id !== "string" || !UUID_PATTERN.test(data.id)) return null;
+    // The filter the cursor was issued under. Always empty until E5 adds one.
+    const f = data.f;
+    if (typeof f !== "object" || f === null || Array.isArray(f) || Object.keys(f).length > 0) {
+      return null;
+    }
+    return { t: data.t, id: data.id };
+  } catch {
+    return null;
+  }
+}
+
+// Feed order: newest first, then id descending to break ties.
+function feedOrder(a: MockListing, b: MockListing): number {
+  return (
+    Date.parse(b.created_at) - Date.parse(a.created_at) || (a.id > b.id ? -1 : a.id < b.id ? 1 : 0)
+  );
+}
+
+// Strictly after the cursor's position in feed order, i.e. (created_at, id) < (t, id).
+function isAfterCursor(listing: MockListing, cursor: FeedCursor): boolean {
+  const created = Date.parse(listing.created_at);
+  const boundary = Date.parse(cursor.t);
+  return created < boundary || (created === boundary && listing.id < cursor.id);
+}
+
+// FastAPI's default validation error shape for a query parameter.
+function queryValidationError(param: string, msg: string) {
+  return HttpResponse.json(
+    { detail: [{ type: "value_error", loc: ["query", param], msg }] },
+    { status: 422 },
+  );
+}
+
 // --- handlers ------------------------------------------------------------------------------
 
 export const handlers = [
@@ -326,12 +422,29 @@ export const handlers = [
 
   http.get(`${API}/listings`, ({ request }) => {
     currentUser(request); // so your own seeded active listing shows in the feed too
-    return HttpResponse.json(
-      [...listings.values()]
-        .filter((l) => l.status === "active")
-        .sort((a, b) => b.created_at.localeCompare(a.created_at))
-        .map(toListItem),
-    );
+    const params = new URL(request.url).searchParams;
+
+    const rawLimit = params.get("limit");
+    const limit = rawLimit === null ? FEED_DEFAULT_LIMIT : Number(rawLimit);
+    if (!/^\d+$/.test(rawLimit ?? "20") || limit < 1 || limit > FEED_MAX_LIMIT) {
+      return queryValidationError("limit", `Input should be an integer from 1 to ${FEED_MAX_LIMIT}`);
+    }
+
+    const rawCursor = params.get("cursor");
+    const cursor = rawCursor === null ? null : decodeCursor(rawCursor);
+    if (rawCursor !== null && cursor === null) {
+      return error(422, "invalid_cursor", "This page link is no longer valid. Reload the feed.");
+    }
+
+    const rows = [...listings.values()]
+      .filter((l) => l.status === "active" && (cursor === null || isAfterCursor(l, cursor)))
+      .sort(feedOrder)
+      .slice(0, limit + 1);
+    const page = rows.slice(0, limit);
+    return HttpResponse.json({
+      items: page.map(toListItem),
+      next_cursor: rows.length > limit ? encodeCursor(page[page.length - 1]) : null,
+    });
   }),
 
   http.post(`${API}/listings`, async ({ request }) => {

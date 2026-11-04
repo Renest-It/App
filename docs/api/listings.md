@@ -1,16 +1,18 @@
-# Listings API Contract (E2–E3)
+# Listings API Contract (E2–E4)
 
-This is the agreed shape of every listings endpoint for E2 (SCRUM-30) and E3 (SCRUM-40). The
+This is the agreed shape of every listings endpoint for E2 (SCRUM-30), E3 (SCRUM-40), and E4's
+paginated feed (SCRUM-48). The
 frontend builds against it using the MSW mocks in `frontend/src/mocks/`, and the backend
 implements it in E2.2 (listing lifecycle), E2.3 (image uploads), E3.2 (edit, delete, sold), and
-E3.3 (My Listings and photo editing). If an endpoint needs to change, change this file
+E3.3 (My Listings and photo editing), and E4.2 (the paginated feed). If an endpoint needs to change, change this file
 in the same PR, so the mocks, the frontend, and the backend never drift apart.
 
 General rules come from [API Conventions](../api-conventions.md). Where that document and the
 code already on `main` disagree, this contract follows `main` so nothing already merged breaks
 (see [Differences from API Conventions](#differences-from-api-conventions)). The storage and
 lifecycle decisions are recorded in [ADR 0009](../decisions/0009-listing-drafts-and-photo-storage.md),
-and E3's listing management decisions in [ADR 0010](../decisions/0010-listing-management.md).
+E3's listing management decisions in [ADR 0010](../decisions/0010-listing-management.md), and the
+feed pagination decisions in [ADR 0011](../decisions/0011-feed-pagination.md).
 
 ## Contents
 
@@ -292,32 +294,61 @@ One listing, with its photos in order and its seller.
 
 ## `GET /listings`
 
-Every **active** listing, newest first. Drafts and sold listings aren't included.
+The home feed: **active** listings, newest first, one page at a time (E4, ADR 0011). Drafts
+and sold listings never appear, on any page.
 
-**Response: `200 OK`**: a JSON array (see [Differences](#differences-from-api-conventions)):
+**Query parameters**
+
+| Parameter | Default | Rules |
+|---|---|---|
+| `limit` | `20` | Integer, **1–50**. Anything else is `422` (FastAPI's default `{"detail": [...]}` body). It's rejected, not clamped, so client bugs show up. |
+| `cursor` | none | Omit for the first page. Otherwise, the `next_cursor` from the previous response, **sent back unchanged**. |
+
+**Response: `200 OK`**
 
 ```json
-[
-  {
-    "id": "6f1c…",
-    "title": "IKEA desk lamp",
-    "description": "Works great, bulb included.",
-    "price_cents": 1500,
-    "category": { "id": 3, "name": "Electronics", "slug": "electronics" },
-    "cover_image_url": "https://…/0b9e….jpg",
-    "created_at": "2026-10-01T14:03:00Z"
-  }
-]
+{
+  "items": [
+    {
+      "id": "6f1c…",
+      "title": "IKEA desk lamp",
+      "description": "Works great, bulb included.",
+      "price_cents": 1500,
+      "category": { "id": 3, "name": "Electronics", "slug": "electronics" },
+      "cover_image_url": "https://…/0b9e….jpg",
+      "created_at": "2026-10-01T14:03:00.123456Z"
+    }
+  ],
+  "next_cursor": "eyJ2IjoxLCJ0Ijoi…"
+}
 ```
 
-- **New in E2:** `cover_image_url` is the URL of the photo at position `0`. The home cards in
-  E2.7 and E4's feed need it.
-- `cover_image_url` is `null` when a listing has no photo at position `0` (for example,
-  listings created before E2). The UI shows a placeholder.
+- **Order:** `created_at` newest first, then `id` descending. The `id` breaks ties between
+  listings created at the same moment.
+- **`next_cursor`:** pass it back as `cursor` to get the listings after this page. It's `null`
+  exactly when there's nothing more, so `null` means **end of feed**. A non-null cursor always
+  leads to a page with at least one item; there's never an empty trailing page.
+- **Stable while the feed changes:** each page continues strictly after the last item of the
+  previous one, by `(created_at, id)`. A listing posted mid-scroll doesn't shift later pages,
+  so nothing is shown twice or skipped. A new listing appears the next time the feed starts
+  from the first page. A listing sold or deleted mid-scroll simply doesn't appear on later pages.
+- **Cursors are opaque.** Clients store them and send them back unchanged; they never decode or
+  build one. The server can change what's inside without changing this contract.
+- **Filters (E5):** a cursor only works with the filter it was issued under. When the filter
+  changes, the client drops its cursor and loaded pages and requests the first page again
+  without a `cursor`. E4 has no filter yet, so every cursor is issued under "no filter".
+- `cover_image_url` is the URL of the photo at position `0`, or `null` when the listing has no
+  photo there (for example, listings created before E2). The UI shows a placeholder.
+- An empty feed is `{ "items": [], "next_cursor": null }`, not an error.
 
 | Status | `code` | When |
 |---|---|---|
-| `200` | — | Always, including when the list is empty |
+| `200` | — | Always for a valid request, including when the feed is empty |
+| `422` | `invalid_cursor` | `cursor` isn't one the server issued, is corrupted (copy-paste, stale bookmark), is from an older cursor format, or was issued under a different filter. The client should drop it and reload the first page. |
+| `422` | — (`detail`) | `limit` missing a value, not an integer, or outside 1–50 |
+
+**Changed in E4:** this endpoint used to return a bare array of every active listing. Until E4.3
+replaces the home page's single fetch, `getListings()` in the frontend accepts both shapes.
 
 ---
 
@@ -416,8 +447,8 @@ partway.
 |---|---|---|
 | `status` | `active`, `draft`, or `sold` | Omitted: all three |
 
-**Response: `200 OK`**: a JSON array, in the same shape as [`GET /listings`](#get-listings)
-plus each listing's `status`:
+**Response: `200 OK`**: a bare JSON array (not paginated), each item in the same shape as a
+[`GET /listings`](#get-listings) item plus the listing's `status`:
 
 ```json
 [
@@ -502,15 +533,16 @@ None of this works on a sold listing (`409 listing_sold`). Mark it unsold first.
 
 [API Conventions](../api-conventions.md) describes two things that the code on `main`
 doesn't do yet, plus one rule this contract deliberately does differently. Otherwise it
-follows `main`, so E2 and E3 don't break merged work:
+follows `main`, so E2–E4 don't break merged work:
 
 | API Conventions says | `main` does, and this contract follows | Why |
 |---|---|---|
 | Errors are wrapped: `{"error": {"code", "message", "details"}}` | Flat `{"code", "message"}` (auth and user errors) | `frontend/src/api/client.ts` reads `body.code` at the top level to detect auth failures (E1.6) |
-| Collections use `{"items": [...], "page": {...}}` | `GET /listings` returns a bare array | `ListPage` and `getListings()` expect an array |
+| Collections use `{"items": [...], "page": {"limit", "offset", "total"}}` | `GET /listings` returns `{"items": [...], "next_cursor": ...}` (E4) | Keyset pagination has no offset, and a `total` would cost a count on every request for a number the feed never shows (ADR 0011) |
 | `403` when the actor doesn't own the resource | `404 listing_not_found` for every owner-only action on someone else's listing (E3.1) | A 403 confirms the listing ID exists. Deliberate, not a gap to close (ADR 0010). |
 
-`GET /listings/mine` returns a bare array too, to match `GET /listings`.
+`GET /listings/mine` still returns a bare array: a seller's own listings are few, so it isn't
+paginated.
 
 Whether to align the code with the conventions (or the reverse) is a team decision for a
 separate ticket.
