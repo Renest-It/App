@@ -3,6 +3,7 @@ import type { Listing } from "../../api/types";
 import { Button } from "../../components/Button";
 import { CategoryChip } from "../../components/CategoryChip";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { FilterChip } from "../../components/FilterChip";
 import { PriceInput } from "../../components/PriceInput";
 import { Select } from "../../components/Select";
 import { StatusBadge } from "../../components/StatusBadge";
@@ -132,6 +133,20 @@ export function ComponentGallery() {
           <CategoryChip label="Furniture" />
           <CategoryChip label="Electronics" />
           <CategoryChip label="Textbooks" />
+        </div>
+      </Section>
+
+      <Section title="FilterChip">
+        <div className="flex flex-wrap gap-2">
+          <FilterChip label="Furniture" selected={false} onClick={() => {}} />
+          <FilterChip label="All" selected onClick={() => {}} />
+          {/* The focus ring, shown without focusing (Tab to a chip to see the real one). */}
+          <FilterChip
+            label="Kitchen (focused)"
+            selected={false}
+            onClick={() => {}}
+            className="outline-2 outline-offset-2 outline-accent"
+          />
         </div>
       </Section>
 
