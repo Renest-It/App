@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PriceInput } from "../components/PriceInput";
 import { PRICE_MAX_CENTS, centsToPriceInput, parsePriceCents } from "./validation";
 
@@ -21,14 +21,20 @@ export function PriceRangeFilter({
   const [maxText, setMaxText] = useState(max === undefined ? "" : centsToPriceInput(max));
   const [error, setError] = useState<string | undefined>(undefined);
 
-  // Clearing the filter elsewhere (e.g. "Clear filter" in an empty state) should empty these
-  // too, not leave stale text the URL no longer matches.
-  useEffect(() => {
+  // When min/max change from outside (e.g. "Clear filter," or Back to another URL), the local
+  // text should follow. Adjusted during render, as React's docs recommend for "state changed
+  // because a prop changed," rather than in a useEffect: an effect would set state one render
+  // late, which is exactly what react-hooks/set-state-in-effect flags.
+  const [syncedMin, setSyncedMin] = useState(min);
+  const [syncedMax, setSyncedMax] = useState(max);
+  if (min !== syncedMin) {
+    setSyncedMin(min);
     setMinText(min === undefined ? "" : centsToPriceInput(min));
-  }, [min]);
-  useEffect(() => {
+  }
+  if (max !== syncedMax) {
+    setSyncedMax(max);
     setMaxText(max === undefined ? "" : centsToPriceInput(max));
-  }, [max]);
+  }
 
   function commit() {
     const minRaw = minText.trim();
