@@ -102,9 +102,26 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 // One page of the home feed (docs/api/listings.md, ADR 0011), used by useFeed(). Omit `cursor`
-// for the first page; otherwise send the previous page's next_cursor back unchanged.
-export const getListingsPage = ({ cursor, limit }: { cursor?: string; limit?: number } = {}) => {
+// for the first page; otherwise send the previous page's next_cursor back unchanged, with the
+// same `category` (a cursor only works under the filter it came from, E5.1).
+export const getListingsPage = ({
+  cursor,
+  limit,
+  category,
+  minPrice,
+  maxPrice,
+}: {
+  cursor?: string;
+  limit?: number;
+  category?: string;
+  // Cents, matching price_cents everywhere else (E5.4).
+  minPrice?: number;
+  maxPrice?: number;
+} = {}) => {
   const params = new URLSearchParams();
+  if (category !== undefined) params.set("category", category);
+  if (minPrice !== undefined) params.set("min_price", String(minPrice));
+  if (maxPrice !== undefined) params.set("max_price", String(maxPrice));
   if (cursor) params.set("cursor", cursor);
   if (limit !== undefined) params.set("limit", String(limit));
   const query = params.toString();

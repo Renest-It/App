@@ -128,3 +128,44 @@ the three can merge in any order.
 
   The measurement and decision get added here as an addendum, or in a new ADR if the decision
   changes this one.
+
+## Addendum — E5.1: the category filter (2026-11-04)
+
+`GET /listings?category=<slug>` adds `AND category_id = :id` to the feed query and puts
+`{"category": "<slug>"}` in the cursor's `f`, so a cursor only works under the filter it was
+issued with (`docs/api/listings.md` → `GET /listings`).
+
+**Index decision: no second index.** `ix_listings_feed` alone serves the filtered feed.
+
+The criterion was fixed before measuring. Keep the one index only if, for a **rare** category's
+first page, both of these hold:
+- it's an index scan with no `Sort` and no `Seq Scan`;
+- `Rows Removed by Filter` is at most 1,000 and execution is under 5 ms.
+
+Otherwise, add `(status, category_id, created_at DESC, id DESC)`.
+
+Measured with `scripts/explain_feed.py`: 5,000 listings, 80% active, one category at ~40% of
+rows and one at ~2%. Postgres 16.15.
+
+| Feed | Page | Plan | Rows removed by filter | Buffers | Execution |
+|---|---|---|---|---|---|
+| Unfiltered | first | Index Scan on `ix_listings_feed` | — | 5 | 0.04 ms |
+| Unfiltered | cursor | same, cursor in `Index Cond` | — | 5 | 0.04 ms |
+| Common (~40%) | first | same, category as `Filter` | 0 | 5 | 0.04 ms |
+| Common (~40%) | cursor | same, cursor in `Index Cond` | 0 | 6 | 0.04 ms |
+| Rare (~2%) | first | same, category as `Filter` | 944 | 33 | 0.10 ms |
+| Rare (~2%) | cursor | same, cursor in `Index Cond` | 784 | 29 | 0.11 ms |
+
+No plan has a sort or a sequential scan, and the cursor stays an index condition under every
+filter. `tests/test_feed_query_plan.py` checks both in CI, for both categories.
+
+**Why this holds, and when to revisit:** the scan reads rows in feed order until it has 21
+matches, so the rows it skips depend on the category's **share** of active listings, not on the
+table's size: about `21 / share`. At 2% that's ~1,000 rows and a fraction of a millisecond. A
+bigger table doesn't change it. Revisit if:
+- a category falls well below ~2% of active listings (at 0.5% it's ~4,000 rows per page);
+- categories become much more numerous (for example, subcategories);
+- filters are combined, such as category plus price in E5.4, which multiplies the shares.
+
+The fix is the second index above, in its own migration; the cursor format doesn't change. A
+reordered single index was rejected, because the unfiltered feed would then need a sort.

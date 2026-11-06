@@ -69,6 +69,12 @@ def _unknown_category() -> ApiError:
     return ApiError(422, "unknown_category", "That category doesn't exist.")
 
 
+def _invalid_price_range() -> ApiError:
+    return ApiError(
+        422, "invalid_price_range", "The minimum price can't be more than the maximum."
+    )
+
+
 def _storage_unavailable() -> ApiError:
     return ApiError(
         503, "storage_unavailable", "Photo storage isn't available right now. Try again shortly."
@@ -162,15 +168,29 @@ def create_listing(
     return new_listing
 
 
-def feed_query(db: Session, position: FeedPosition | None, limit: int):
-    """Active listings, newest first, strictly after `position`: the shape ix_listings_feed
-    serves (ADR 0011). Fetches limit + 1 rows so the caller can tell whether a next page exists.
+def feed_query(
+    db: Session,
+    position: FeedPosition | None,
+    limit: int,
+    category_id: int | None = None,
+    min_price: int | None = None,
+    max_price: int | None = None,
+):
+    """Active listings, newest first, strictly after `position`, optionally in one category and
+    one price range in cents (E5.4): the shape the feed indexes serve (ADR 0011). Fetches
+    limit + 1 rows so the caller can tell whether a next page exists.
     """
     query = (
         db.query(Listing)
         .options(joinedload(Listing.category), selectinload(Listing.images))
         .filter(Listing.status == "active")
     )
+    if category_id is not None:
+        query = query.filter(Listing.category_id == category_id)
+    if min_price is not None:
+        query = query.filter(Listing.price_cents >= min_price)
+    if max_price is not None:
+        query = query.filter(Listing.price_cents <= max_price)
     if position is not None:
         # A row comparison, so ties on created_at are broken by id and the index can start
         # the scan at the cursor.
@@ -184,12 +204,35 @@ def feed_query(db: Session, position: FeedPosition | None, limit: int):
 def list_listings(
     cursor: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=50),
+    category: str | None = Query(default=None),
+    min_price: int | None = Query(default=None, ge=0, le=1_000_000),
+    max_price: int | None = Query(default=None, ge=0, le=1_000_000),
     db: Session = Depends(get_db),
 ):
-    position = decode_cursor(cursor) if cursor is not None else None
-    rows = feed_query(db, position, limit).all()
+    # Filters are checked before the cursor: they decide which cursors are valid.
+    category_id = None
+    if category is not None:
+        category_id = db.query(Category.id).filter(Category.slug == category).scalar()
+        if category_id is None:
+            raise _unknown_category()
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise _invalid_price_range()
+
+    # A cursor only works under the exact filters it was issued with (E5.1/E5.4, ADR 0011).
+    filters: dict = {}
+    if category is not None:
+        filters["category"] = category
+    if min_price is not None:
+        filters["min_price"] = min_price
+    if max_price is not None:
+        filters["max_price"] = max_price
+
+    position = decode_cursor(cursor, filters) if cursor is not None else None
+    rows = feed_query(db, position, limit, category_id, min_price, max_price).all()
     page = rows[:limit]
-    next_cursor = encode_cursor(page[-1].created_at, page[-1].id) if len(rows) > limit else None
+    next_cursor = (
+        encode_cursor(page[-1].created_at, page[-1].id, filters) if len(rows) > limit else None
+    )
     return ListingsPage(
         items=[ListingListItem(**_list_item_fields(listing)) for listing in page],
         next_cursor=next_cursor,
