@@ -5,7 +5,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Query, Response
 from pydantic import ValidationError
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
 
@@ -19,6 +19,7 @@ from app.dependencies import (
 )
 from app.errors import ApiError
 from app.models import Category, Listing, ListingImage, User
+from app.pagination import FeedPosition, decode_cursor, encode_cursor
 from app.schemas.listing import (
     MAX_PHOTOS,
     ImageUploadUrlOut,
@@ -29,6 +30,7 @@ from app.schemas.listing import (
     ListingImageCreate,
     ListingImageOut,
     ListingListItem,
+    ListingsPage,
     ListingUpdate,
     MyListingItem,
 )
@@ -160,16 +162,38 @@ def create_listing(
     return new_listing
 
 
-@router.get("/listings", response_model=list[ListingListItem])
-def list_listings(db: Session = Depends(get_db)):
-    listings = (
+def feed_query(db: Session, position: FeedPosition | None, limit: int):
+    """Active listings, newest first, strictly after `position`: the shape ix_listings_feed
+    serves (ADR 0011). Fetches limit + 1 rows so the caller can tell whether a next page exists.
+    """
+    query = (
         db.query(Listing)
         .options(joinedload(Listing.category), selectinload(Listing.images))
         .filter(Listing.status == "active")
-        .order_by(desc(Listing.created_at))
-        .all()
     )
-    return [ListingListItem(**_list_item_fields(listing)) for listing in listings]
+    if position is not None:
+        # A row comparison, so ties on created_at are broken by id and the index can start
+        # the scan at the cursor.
+        query = query.filter(
+            tuple_(Listing.created_at, Listing.id) < tuple_(position.created_at, position.id)
+        )
+    return query.order_by(desc(Listing.created_at), desc(Listing.id)).limit(limit + 1)
+
+
+@router.get("/listings", response_model=ListingsPage)
+def list_listings(
+    cursor: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    position = decode_cursor(cursor) if cursor is not None else None
+    rows = feed_query(db, position, limit).all()
+    page = rows[:limit]
+    next_cursor = encode_cursor(page[-1].created_at, page[-1].id) if len(rows) > limit else None
+    return ListingsPage(
+        items=[ListingListItem(**_list_item_fields(listing)) for listing in page],
+        next_cursor=next_cursor,
+    )
 
 
 # Declared before /listings/{listing_id}, or "mine" would be matched as a listing ID.

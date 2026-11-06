@@ -79,6 +79,13 @@ class ListingListItem(BaseModel):
     created_at: datetime
 
 
+class ListingsPage(BaseModel):
+    """GET /listings: one page of the feed (ADR 0011). next_cursor is null at the end."""
+
+    items: list[ListingListItem]
+    next_cursor: str | None
+
+
 class MyListingItem(ListingListItem):
     """GET /listings/mine: the feed's shape plus status, since it includes drafts and sold."""
 

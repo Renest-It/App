@@ -113,7 +113,7 @@ def test_empty_is_an_empty_array(client, seller, other, create):
 
 def test_items_have_the_feed_shape_plus_status(client, seller, create):
     listing_id = create("active")
-    feed_item = next(i for i in client.get("/listings", headers=seller).json() if i["id"] == listing_id)
+    feed_item = next(i for i in client.get("/listings", headers=seller).json()["items"] if i["id"] == listing_id)
     [item] = mine(client, seller)
     assert item == {**feed_item, "status": "active"}
     assert item["cover_image_url"].endswith(".jpg")
