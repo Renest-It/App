@@ -1,0 +1,5 @@
+# Development and CI only: the deployed service installs requirements.txt alone.
+-r requirements.txt
+
+# Demo seed script (scripts/seed_demo.py): resizes photos like the upload pipeline.
+Pillow==12.3.0

@@ -23,12 +23,12 @@ def calls(monkeypatch):
 
     recorded = Calls()
     recorded.responses = {}
-    recorded.bodies = []  # the JSON body of each request, in the same order
+    recorded.bodies = []  # the JSON (or raw `content`) body of each request, in the same order
 
     def fake(method):
-        def _send(url, *, headers, timeout, json=None):
+        def _send(url, *, headers, timeout, json=None, content=None):
             recorded.append((method, url, headers))
-            recorded.bodies.append(json)
+            recorded.bodies.append(json if content is None else content)
             answer = recorded.responses[method]
             if isinstance(answer, Exception):
                 raise answer
@@ -66,6 +66,29 @@ def test_signed_upload_url_failures_are_storage_unavailable(calls, answer):
     calls.responses["POST"] = answer
     with pytest.raises(storage.StorageUnavailable):
         storage.create_signed_upload_url(PATH)
+
+
+def test_upload_object_sends_the_file(calls):
+    calls.responses["POST"] = fake_response("POST", 200, {"Key": f"listing-photos/{PATH}"})
+    storage.upload_object(PATH, b"jpeg bytes", "image/jpeg")
+    [(method, url, headers)] = calls
+    assert url == f"{STORAGE}/object/listing-photos/{PATH}"
+    assert headers["Authorization"] == "Bearer test-service-role-key"
+    assert headers["Content-Type"] == "image/jpeg"
+    assert calls.bodies == [b"jpeg bytes"]
+
+
+@pytest.mark.parametrize("answer", [fake_response("POST", 400), httpx.ConnectError("offline")])
+def test_upload_object_failures_are_storage_unavailable(calls, answer):
+    calls.responses["POST"] = answer
+    with pytest.raises(storage.StorageUnavailable):
+        storage.upload_object(PATH, b"jpeg bytes", "image/jpeg")
+
+
+def test_list_folder_returns_the_names(calls):
+    calls.responses["POST"] = fake_response("POST", 200, [{"name": "a.jpg"}, {"name": "b.webp"}])
+    assert storage.list_folder(FOLDER) == ["a.jpg", "b.webp"]
+    assert calls.bodies[0]["prefix"] == FOLDER
 
 
 @pytest.mark.parametrize("status, exists", [(200, True), (400, False), (404, False)])

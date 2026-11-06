@@ -64,6 +64,25 @@ The database is a single shared Supabase Postgres instance — everyone's schema
 - To create a new migration after changing a model in `app/models/`: `alembic revision --autogenerate -m "description"`, then **hand-review the generated file** before committing — autogenerate misses constraints (like `CHECK` constraints) and can get column type changes wrong.
 - `alembic downgrade base` drops all tables. Since the database is shared, never run this against the real Supabase instance unless you've coordinated with the team — test destructive migration changes against a local/disposable Postgres instance first.
 
+### Demo data
+
+`scripts/seed_demo.py` adds 50 realistic listings with photos (42 active, plus 4 sold and 4 drafts) from six fictional demo sellers. It's what the paginated feed is tested with, and the demo dataset for E7. The content is in `backend/scripts/demo_data/listings.json`, and photo credits are in `demo_data/CREDITS.md`. It needs the dev requirements (`pip install -r requirements-dev.txt`, which adds Pillow) and `SUPABASE_SERVICE_ROLE_KEY` in `backend/.env`, since it uploads the photos.
+
+```bash
+# Your local database (e.g. the test container above). Runs straight away.
+python scripts/seed_demo.py --database-url postgresql://renest_test:renest_test@localhost:5433/renest_test
+
+# Take it out again.
+python scripts/seed_demo.py --database-url postgresql://renest_test:renest_test@localhost:5433/renest_test --remove
+```
+
+- **Re-running is safe.** The script replaces only its own rows: the demo sellers (`demo-seller-…@renest.invalid`, no sign-in account) and their listings. Real users and listings are never touched. Posting times are counted back from each run, so the feed always looks recent.
+- **The shared database needs the team's agreement first.** The script never reads the database from `.env`. Pass the shared connection string explicitly, with `--shared --yes`; it refuses a Supabase host without both flags.
+- **Photos.** Every photo is resized like an app upload (1600px JPEG) and stored under its listing's folder in `listing-photos`. Only new or changed photos are uploaded. Local runs never delete from storage, because the shared database may use the same files; `--shared` runs also remove demo photos nothing uses any more.
+- **To swap in your own photo,** put the file in `backend/scripts/demo_data/photos/`, set that listing's `source` to the file name and `credit` to your name, and re-run.
+
+To check a deployment's feed against the seed (read-only, safe on production): `TOKEN=$(python scripts/get_token.py) python scripts/check_feed.py --api https://<backend-host>`. It reports duplicates, any sold or draft demo listing it saw, and missing demo listings, and exits 1 on any problem.
+
 ### Getting your Supabase credentials
 
 1. Ask a teammate for an invite to the ReNest Supabase org (or request real credentials via the team channel / password manager) — do not create a separate personal project.
