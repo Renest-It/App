@@ -36,7 +36,7 @@ class Listing(Base):
         Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )
     status = Column(String, nullable=False, server_default="active")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), nullable=True)
 
     category = relationship("Category")

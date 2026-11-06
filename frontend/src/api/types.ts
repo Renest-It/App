@@ -22,6 +22,13 @@ export interface Listing {
   created_at: string;
 }
 
+// One page of the home feed (GET /listings, E4.1). Send next_cursor back unchanged as `cursor`
+// for the next page; null means the end of the feed. Never parse or build a cursor yourself.
+export interface ListingsPage {
+  items: Listing[];
+  next_cursor: string | null;
+}
+
 // What GET /listings/mine returns: the feed's shape, plus status (it includes drafts and sold).
 export interface MyListing extends Listing {
   status: ListingStatus;
