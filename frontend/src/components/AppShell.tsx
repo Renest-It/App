@@ -1,5 +1,5 @@
 import { House, MessageCircle, Plus, User, type LucideIcon } from "lucide-react";
-import { Link, NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet, ScrollRestoration } from "react-router";
 import birdUrl from "../assets/renest-bird.svg";
 
 // The frame around every in-app page: a left rail on desktop, a bottom tab bar on phones.
@@ -166,6 +166,9 @@ export function AppShell() {
       </main>
       {/* After <main> so keyboard users reach the page content before the tab bar. */}
       <TabBar />
+      {/* Every in-app page opens at the top, and Back returns to where you were, which is how
+          the home feed keeps your place when you come back from a listing (E4.3). */}
+      <ScrollRestoration />
     </div>
   );
 }

@@ -1,49 +1,50 @@
-import { PackageSearch, CircleAlert } from "lucide-react";
-import { useEffect, useState } from "react";
-import { getListings } from "../api/client";
+import { CircleAlert, PackageSearch } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Button } from "../components/Button";
+import { CenterState } from "../components/CenterState";
+import { FeedFooter } from "../listings/FeedFooter";
 import { ListingCard } from "../listings/ListingCard";
-import type { Listing } from "../api/types";
-
-type LoadState =
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "loaded"; listings: Listing[] };
+import { useFeed } from "../listings/useFeed";
 
 // 2 columns on mobile, 3 at the sm breakpoint, 4 on desktop (E2.7 acceptance criteria).
 const GRID = "grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4";
 
+// Start loading the next page about one screen before the user reaches the bottom.
+const PRELOAD_MARGIN = "0px 0px 600px 0px";
+
 export function ListPage() {
-  const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [attempt, setAttempt] = useState(0);
+  const { items, status, focusIndex, loadMore, retry } = useFeed();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
 
+  // Auto-load (E4.3 design decision 4). Only watching while idle, so an error or the end of
+  // the feed can't trigger requests. Re-created after every page: a fresh observer reports
+  // the sentinel straight away, so a screen the first page doesn't fill keeps loading.
   useEffect(() => {
-    let cancelled = false;
+    const sentinel = sentinelRef.current;
+    if (status !== "idle" || !sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        // Tabbing to "Load more" scrolls it into view, which auto-loads and removes the
+        // button before Enter is pressed. Focus would drop to the page, so treat it as a press.
+        loadMore({ focusNew: footerRef.current?.contains(document.activeElement) ?? false });
+      },
+      { rootMargin: PRELOAD_MARGIN },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [status, items.length, loadMore]);
 
-    getListings()
-      .then((listings) => {
-        if (!cancelled) setState({ status: "loaded", listings });
-      })
-      .catch((e) => {
-        if (!cancelled) {
-          setState({
-            status: "error",
-            message: e instanceof Error ? e.message : "Something went wrong",
-          });
-        }
-      });
+  // After "Load more", focus the first new card, so keyboard users carry on from there
+  // instead of landing back at the top of the page (decision 5).
+  useEffect(() => {
+    if (focusIndex === null) return;
+    gridRef.current?.querySelector<HTMLElement>(`[data-feed-index="${focusIndex}"] a`)?.focus();
+  }, [focusIndex]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [attempt]);
-
-  function retry() {
-    setState({ status: "loading" });
-    setAttempt((a) => a + 1);
-  }
-
-  if (state.status === "error") {
+  if (status === "first-error") {
     return (
       <CenterState
         icon={<CircleAlert aria-hidden className="size-7" />}
@@ -58,21 +59,25 @@ export function ListPage() {
     );
   }
 
-  if (state.status === "loading") {
+  if (status === "first-loading") {
     return (
       <div className={GRID} aria-busy>
+        {/* Same boxes as ListingCard (photo, then a 20px title and a 24px price row), so
+            nothing moves when the real cards replace them (E4.3 decision 7). */}
         {Array.from({ length: 8 }, (_, i) => (
           <div key={i} className="flex flex-col gap-2">
             <div className="aspect-[4/3] w-full animate-pulse rounded-md bg-border" />
-            <div className="h-4 w-4/5 animate-pulse rounded-sm bg-border" />
-            <div className="h-4 w-1/3 animate-pulse rounded-sm bg-border" />
+            <div className="flex flex-col gap-1">
+              <div className="h-5 w-4/5 animate-pulse rounded-sm bg-border" />
+              <div className="h-6 w-1/3 animate-pulse rounded-sm bg-border" />
+            </div>
           </div>
         ))}
       </div>
     );
   }
 
-  if (state.listings.length === 0) {
+  if (items.length === 0) {
     return (
       <CenterState
         icon={<PackageSearch aria-hidden className="size-7" />}
@@ -83,40 +88,22 @@ export function ListPage() {
   }
 
   return (
-    <div className={GRID}>
-      {state.listings.map((listing) => (
-        <ListingCard key={listing.id} listing={listing} />
-      ))}
-    </div>
-  );
-}
-
-function CenterState({
-  icon,
-  title,
-  body,
-  danger = false,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-  danger?: boolean;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 px-4 py-16 text-center">
-      <div
-        className={
-          "flex size-14 items-center justify-center rounded-full " +
-          (danger ? "bg-danger-soft-strong text-danger" : "bg-accent-soft text-accent")
-        }
-      >
-        {icon}
+    <>
+      <div ref={gridRef} className={GRID}>
+        {items.map((listing, index) => (
+          <div key={listing.id} data-feed-index={index}>
+            <ListingCard listing={listing} />
+          </div>
+        ))}
       </div>
-      <h1 className="font-display text-lg font-bold text-text">{title}</h1>
-      <p className="text-body max-w-xs text-text-muted">{body}</p>
-      {children}
-    </div>
+      <div ref={sentinelRef} aria-hidden />
+      <div ref={footerRef}>
+        <FeedFooter
+          status={status}
+          onLoadMore={() => loadMore({ focusNew: true })}
+          onRetry={retry}
+        />
+      </div>
+    </>
   );
 }
