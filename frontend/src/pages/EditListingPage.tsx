@@ -80,7 +80,7 @@ function EditListingLoader({ id }: { id: string }) {
         danger
       >
         <Button
-          className="w-auto min-w-40"
+          className="w-auto! min-w-40"
           onClick={() => {
             setState({ status: "loading" });
             setAttempt((a) => a + 1);
@@ -100,7 +100,7 @@ function EditListingLoader({ id }: { id: string }) {
         title="Listing not found"
         body="This listing may have been removed or the link is incorrect."
       >
-        <ButtonLink to="/" className="w-auto min-w-40">
+        <ButtonLink to="/" className="w-auto! min-w-40">
           Back to home
         </ButtonLink>
       </CenterState>
@@ -114,7 +114,7 @@ function EditListingLoader({ id }: { id: string }) {
         title="Sold listings can't be edited"
         body="Relist it first if you need to change something."
       >
-        <ButtonLink to={`/listings/${id}`} className="w-auto min-w-40">
+        <ButtonLink to={`/listings/${id}`} className="w-auto! min-w-40">
           Back to listing
         </ButtonLink>
       </CenterState>

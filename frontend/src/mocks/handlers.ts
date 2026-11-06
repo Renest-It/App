@@ -219,7 +219,9 @@ FEED_TITLES.forEach((title, i) => {
       title,
       description: null,
       price_cents: [0, 500, 1200, 2500, 4000, 800, 1500][i % 7],
-      category_id: (i % CATEGORIES.length) + 1,
+      // Half are furniture, so the furniture filter spans two pages (E5.2). The rest cycle
+      // through Electronics to Decor. Other gets none, for the filtered-empty state.
+      category_id: i % 2 === 0 ? 1 : ((i >> 1) % 5) + 2,
       status: "active",
       seller: OTHER_SELLER,
       created_at: new Date(Date.UTC(2026, 8, 26, 12) - hoursBefore * 3_600_000).toISOString(),
@@ -392,8 +394,9 @@ function findOwned(request: Request, id: string): Lookup {
 // --- feed pagination (E4.1, docs/api/listings.md) ---------------------------------------
 //
 // Same cursor format as the backend (ADR 0011): base64url, no padding, of
-// {"v":1,"t":<created_at>,"id":<id>,"f":{}}. Clients treat it as opaque; matching the format
-// here only means E4.3 can test invalid-cursor handling against the mocks.
+// {"v":1,"t":<created_at>,"id":<id>,"f":<filters>}, where filters is {} or {"category": slug}
+// (E5.1). Clients treat it as opaque; matching the format here only means the frontend can
+// test invalid-cursor handling against the mocks.
 
 const FEED_DEFAULT_LIMIT = 20;
 const FEED_MAX_LIMIT = 50;
@@ -404,13 +407,16 @@ interface FeedCursor {
   id: string;
 }
 
-function encodeCursor(listing: MockListing): string {
-  const json = JSON.stringify({ v: 1, t: listing.created_at, id: listing.id, f: {} });
+type FeedFilters = { category?: string };
+
+function encodeCursor(listing: MockListing, filters: FeedFilters): string {
+  const json = JSON.stringify({ v: 1, t: listing.created_at, id: listing.id, f: filters });
   return btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-// null for anything the server can't use: the API answers 422 invalid_cursor.
-function decodeCursor(cursor: string): FeedCursor | null {
+// null for anything the server can't use, including a cursor issued under other filters: the
+// API answers 422 invalid_cursor.
+function decodeCursor(cursor: string, filters: FeedFilters): FeedCursor | null {
   try {
     const base64 = cursor.replace(/-/g, "+").replace(/_/g, "/");
     const data = JSON.parse(atob(base64 + "=".repeat((4 - (base64.length % 4)) % 4)));
@@ -418,11 +424,10 @@ function decodeCursor(cursor: string): FeedCursor | null {
     if (data.v !== 1) return null;
     if (typeof data.t !== "string" || Number.isNaN(Date.parse(data.t))) return null;
     if (typeof data.id !== "string" || !UUID_PATTERN.test(data.id)) return null;
-    // The filter the cursor was issued under. Always empty until E5 adds one.
+    // The filters the cursor was issued under must be exactly this request's.
     const f = data.f;
-    if (typeof f !== "object" || f === null || Array.isArray(f) || Object.keys(f).length > 0) {
-      return null;
-    }
+    if (typeof f !== "object" || f === null || Array.isArray(f)) return null;
+    if (JSON.stringify(f) !== JSON.stringify(filters)) return null;
     return { t: data.t, id: data.id };
   } catch {
     return null;
@@ -496,20 +501,33 @@ export const handlers = [
       );
     }
 
+    // Exact slug match, checked before the cursor (E5.1).
+    const slug = params.get("category");
+    const categoryId = slug === null ? null : CATEGORIES.find((c) => c.slug === slug)?.id;
+    if (categoryId === undefined) {
+      return error(422, "unknown_category", "That category doesn't exist.");
+    }
+    const filters: FeedFilters = slug === null ? {} : { category: slug };
+
     const rawCursor = params.get("cursor");
-    const cursor = rawCursor === null ? null : decodeCursor(rawCursor);
+    const cursor = rawCursor === null ? null : decodeCursor(rawCursor, filters);
     if (rawCursor !== null && cursor === null) {
       return error(422, "invalid_cursor", "This page link is no longer valid. Reload the feed.");
     }
 
     const rows = [...listings.values()]
-      .filter((l) => l.status === "active" && (cursor === null || isAfterCursor(l, cursor)))
+      .filter(
+        (l) =>
+          l.status === "active" &&
+          (categoryId === null || l.category_id === categoryId) &&
+          (cursor === null || isAfterCursor(l, cursor)),
+      )
       .sort(feedOrder)
       .slice(0, limit + 1);
     const page = rows.slice(0, limit);
     return HttpResponse.json({
       items: page.map(toListItem),
-      next_cursor: rows.length > limit ? encodeCursor(page[page.length - 1]) : null,
+      next_cursor: rows.length > limit ? encodeCursor(page[page.length - 1], filters) : null,
     });
   }),
 

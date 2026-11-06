@@ -107,7 +107,7 @@ function ListingDetailBody({ id }: { id?: string }) {
         title="Listing not found"
         body="This listing may have been removed or the link is incorrect."
       >
-        <ButtonLink to="/" className="w-auto min-w-40">
+        <ButtonLink to="/" className="w-auto! min-w-40">
           Back to home
         </ButtonLink>
       </CenterState>
@@ -122,7 +122,7 @@ function ListingDetailBody({ id }: { id?: string }) {
         body="Check your connection and try again."
         danger
       >
-        <Button className="w-auto min-w-40" onClick={retry}>
+        <Button className="w-auto! min-w-40" onClick={retry}>
           Retry
         </Button>
       </CenterState>

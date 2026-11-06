@@ -16,7 +16,7 @@ export function FeedFooter({ status, onLoadMore, onRetry }: FeedFooterProps) {
   return (
     <div aria-live="polite" className="flex h-32 items-center justify-center lg:h-20">
       {status === "idle" && (
-        <Button variant="secondary" className="w-auto min-w-40" onClick={onLoadMore}>
+        <Button variant="secondary" className="w-auto! min-w-40" onClick={onLoadMore}>
           Load more
         </Button>
       )}
@@ -32,7 +32,7 @@ export function FeedFooter({ status, onLoadMore, onRetry }: FeedFooterProps) {
         // Stacked on mobile, side by side from sm (decision 6).
         <div className="flex w-full max-w-md flex-col items-center gap-3 sm:flex-row">
           <Alert>Couldn't load more listings.</Alert>
-          <Button variant="secondary" className="w-auto min-w-40 shrink-0" onClick={onRetry}>
+          <Button variant="secondary" className="w-auto! min-w-40 shrink-0" onClick={onRetry}>
             Retry
           </Button>
         </div>
