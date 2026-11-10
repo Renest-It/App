@@ -118,6 +118,14 @@ class ListingDetail(BaseModel):
     images: list[ListingImageOut]  # sorted by position
     created_at: datetime
 
+class SellerContactOut(BaseModel):
+    """GET /listings/{id}/seller-contact. The ONLY response that includes the seller's email
+    (docs/api/listings.md, ADR 0012). Never reuse this schema for any other endpoint."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    email: str
+    display_name: str | None
 
 class ImageUploadUrlRequest(BaseModel):
     # Checked in the route, not here, so an unsupported type gets the contract's own

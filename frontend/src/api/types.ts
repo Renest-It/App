@@ -75,6 +75,14 @@ export interface Seller {
   display_name: string | null;
 }
 
+
+// What GET /listings/{id}/seller-contact returns (E6.1). The ONLY shape that includes the
+// seller's email (ADR 0012) — never add email to Seller above.
+export interface SellerContact {
+  email: string;
+  display_name: string | null;
+}
+
 // PATCH /listings/{id}: send only the fields that changed. description: null clears it.
 export interface ListingUpdate {
   title?: string;
