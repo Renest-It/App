@@ -110,7 +110,12 @@ export type Feed = {
   retry: () => void;
 };
 
-export type FeedFilter = { category?: string };
+export type FeedFilter = {
+  category?: string;
+  // Cents, matching price_cents everywhere else (E5.4). Either end can be left off.
+  minPrice?: number;
+  maxPrice?: number;
+};
 
 // The home feed, one page at a time (E4.3, ADR 0011). Every way of loading more goes through
 // loadMore(), which starts at most one request at a time. The filter is sent with every page;

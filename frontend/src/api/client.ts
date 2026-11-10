@@ -108,9 +108,20 @@ export const getListingsPage = ({
   cursor,
   limit,
   category,
-}: { cursor?: string; limit?: number; category?: string } = {}) => {
+  minPrice,
+  maxPrice,
+}: {
+  cursor?: string;
+  limit?: number;
+  category?: string;
+  // Cents, matching price_cents everywhere else (E5.4).
+  minPrice?: number;
+  maxPrice?: number;
+} = {}) => {
   const params = new URLSearchParams();
   if (category !== undefined) params.set("category", category);
+  if (minPrice !== undefined) params.set("min_price", String(minPrice));
+  if (maxPrice !== undefined) params.set("max_price", String(maxPrice));
   if (cursor) params.set("cursor", cursor);
   if (limit !== undefined) params.set("limit", String(limit));
   const query = params.toString();
