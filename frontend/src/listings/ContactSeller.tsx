@@ -101,10 +101,14 @@ export function ContactSeller({ listingId, listingTitle }: ContactSellerProps) {
 
   return (
     <>
-      {/* Mobile: fills the div ListingDetailPage reserves and pins to the bottom. */}
+      {/* Mobile: fills the div ListingDetailPage reserves. Pinned just above AppShell's tab
+          bar (not at bottom-0 like the tab bar itself) — both are fixed, and the tab bar
+          renders after <Outlet> in the DOM, so bottom-0 here would sit underneath it,
+          invisible. The offset matches the tab bar's own height exactly (same expression as
+          <main>'s bottom padding in AppShell.tsx), so the two sit flush, stacked. */}
       <div
         data-reserved-for="E6-contact-button"
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
+        className="fixed inset-x-0 bottom-[calc(4rem+max(0.75rem,env(safe-area-inset-bottom)))] z-10 border-t border-border bg-surface px-4 py-3 lg:hidden"
       >
         {content}
       </div>
