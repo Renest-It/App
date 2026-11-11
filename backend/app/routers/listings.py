@@ -33,6 +33,7 @@ from app.schemas.listing import (
     ListingsPage,
     ListingUpdate,
     MyListingItem,
+    SellerContactOut,
 )
 from app.storage import public_url
 
@@ -500,3 +501,18 @@ def delete_listing_image(
     except storage.StorageUnavailable as e:
         logger.warning("Deleted photo, but couldn't remove %s from storage: %s", storage_path, e)
     return Response(status_code=204)
+
+
+@router.get("/listings/{listing_id}/seller-contact", response_model=SellerContactOut)
+def get_seller_contact(
+    listing_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Same visibility rule as GET /listings/{id}: someone else's draft (or an unknown/malformed
+    # ID) is 404, so this reveals nothing a buyer couldn't already see on the listing itself.
+    listing = _get_visible_listing(db, listing_id, current_user)
+    # Logged, not rate-limited this semester (ADR 0012): in-memory limiter state wouldn't
+    # survive Render free-tier spin-down, so this log is the only harvesting signal for now.
+    logger.info("Seller contact revealed: user=%s listing=%s", current_user.id, listing.id)
+    return SellerContactOut.model_validate(listing.seller)

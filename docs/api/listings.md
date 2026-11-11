@@ -33,6 +33,8 @@ feed pagination decisions in [ADR 0011](../decisions/0011-feed-pagination.md).
   [`POST /listings/{id}/unsold`](#post-listingsidunsold) ·
   [`GET /listings/mine`](#get-listingsmine) ·
   [`DELETE /listings/{id}/images/{image_id}`](#delete-listingsidimagesimage_id)
+  - E6 endpoint:
+  [`GET /listings/{id}/seller-contact`](#get-listingsidseller-contact)
 - [The publish flow, end to end](#the-publish-flow-end-to-end)
 - [Editing photos on a published listing](#editing-photos-on-a-published-listing)
 - [Differences from API Conventions](#differences-from-api-conventions)
@@ -284,8 +286,9 @@ One listing, with its photos in order and its seller.
 - `images` is sorted by `position`, ascending.
 - `category` is the full object, the same shape as in `GET /listings`.
 - **`seller` contains `id` and `display_name` only. The seller's email is never returned**,
-  here or on any listings endpoint. It's revealed only through E6's contact button, when
-  someone deliberately asks to contact the seller.
+  here or on any listings endpoint. It's revealed only through
+  [`GET /listings/{id}/seller-contact`](#get-listingsidseller-contact), when someone
+  deliberately asks to contact the seller.
 
 | Status | `code` | When |
 |---|---|---|
@@ -510,6 +513,34 @@ Removes one photo from a draft or active listing. There's no request body.
 | `404` | `image_not_found` | No photo with that `image_id` on this listing (including a malformed ID) |
 | `409` | `listing_sold` | The listing is sold, so its photos can't change |
 | `422` | `last_photo_required` | It's the only photo on an active listing. Add another first. |
+
+---
+
+## E6 endpoint
+
+## `GET /listings/{id}/seller-contact`
+
+Reveals the seller's email, so a buyer can reach out off-platform (there's no in-app
+messaging — ADR 0002). This is the **only** place the seller's email is ever returned; every
+other listing response omits it on purpose ([Common rules](#common-rules)). Visibility follows
+the same rule as [`GET /listings/{id}`](#get-listingsid): someone else's draft (or an unknown
+or malformed ID) is `404 listing_not_found`, so this endpoint reveals nothing a buyer couldn't
+already see by opening the listing itself.
+
+Every successful call is logged at `INFO` (caller's user ID + listing ID), so a pattern of
+one account walking the whole feed calling this repeatedly is visible after the fact, even
+though it isn't rate-limited this semester (ADR 0012).
+
+**Response: `200 OK`**
+
+```json
+{ "email": "jane.doe@creighton.edu", "display_name": "Jane" }
+```
+
+| Status | `code` | When |
+|---|---|---|
+| `200` | — | Found |
+| `404` | `listing_not_found` | No such listing, or someone else's draft |
 
 ---
 

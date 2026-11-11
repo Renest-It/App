@@ -12,6 +12,7 @@ import type {
   ListingUpdate,
   ListingsPage,
   MyListing,
+  SellerContact,
 } from "./types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -186,3 +187,11 @@ export const markListingUnsold = (listingId: string) =>
 // The photos after the deleted one move down a position, so re-fetch the listing afterwards.
 export const deleteListingImage = (listingId: string, imageId: string) =>
   request<void>(`/listings/${listingId}/images/${imageId}`, { method: "DELETE" });
+
+
+// --- E6: seller contact (docs/api/listings.md, ADR 0012) ---
+
+// The ONLY call that returns the seller's email. Only use it when the user deliberately asks
+// to contact the seller (e.g. clicking the contact button) — never prefetch it.
+export const getSellerContact = (listingId: string) =>
+  request<SellerContact>(`/listings/${listingId}/seller-contact`);

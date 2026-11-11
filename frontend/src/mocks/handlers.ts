@@ -18,6 +18,7 @@ import type {
   ListingImage,
   ListingStatus,
   MyListing,
+  SellerContact,
 } from "../api/types";
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -45,6 +46,9 @@ const CATEGORIES: Category[] = [
 interface MockUser {
   id: string;
   display_name: string | null;
+  // E6.1: never spread into toDetail()/toListItem()'s seller shape — only toContact() may
+  // read this (docs/api/listings.md, ADR 0012).
+  email: string;
 }
 
 interface MockImage extends ListingImage {
@@ -70,7 +74,12 @@ const PLACEHOLDER_PHOTO =
     '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="100%" height="100%" fill="#d6d3d1"/></svg>',
   );
 
-const OTHER_SELLER: MockUser = { id: "00000000-0000-4000-8000-000000000002", display_name: "Sam" };
+const OTHER_SELLER: MockUser = {
+  id: "00000000-0000-4000-8000-000000000002",
+  display_name: "Sam",
+  email: "sam@creighton.edu",
+};
+
 const LISTING_STATUSES: ListingStatus[] = ["draft", "active", "sold"];
 
 const listings = new Map<string, MockListing>();
@@ -274,9 +283,14 @@ function userFromToken(request: Request): MockUser {
     return {
       id: payload.sub,
       display_name: payload.user_metadata?.display_name ?? payload.email?.split("@")[0] ?? null,
+      email: payload.email ?? "you@creighton.edu",
     };
   } catch {
-    return { id: "00000000-0000-4000-8000-000000000001", display_name: "You" };
+    return {
+      id: "00000000-0000-4000-8000-000000000001",
+      display_name: "You",
+      email: "you@creighton.edu",
+    };
   }
 }
 
@@ -301,6 +315,13 @@ function toDetail(listing: MockListing): ListingDetail {
     created_at: listing.created_at,
   };
 }
+
+// E6.1: the ONLY mock function allowed to read a seller's email. Mirrors the backend's
+// SellerContactOut (docs/api/listings.md, ADR 0012).
+function toContact(listing: MockListing): SellerContact {
+  return { email: listing.seller.email, display_name: listing.seller.display_name };
+}
+
 
 function toListItem(listing: MockListing): Listing {
   return {
@@ -749,5 +770,13 @@ export const handlers = [
       .sort((a, b) => a.position - b.position)
       .map((i, position) => ({ ...i, position }));
     return new HttpResponse(null, { status: 204 });
+  }),
+
+  // E6.1: same visibility rule as GET /listings/:id (findVisible) — someone else's draft, or
+  // an unknown ID, is 404. This is the only handler allowed to return an email.
+  http.get(`${API}/listings/:id/seller-contact`, ({ request, params }) => {
+    const found = findVisible(request, params.id as string);
+    if ("response" in found) return found.response;
+    return HttpResponse.json(toContact(found.listing));
   }),
 ];
