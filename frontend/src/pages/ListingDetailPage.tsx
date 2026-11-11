@@ -10,10 +10,10 @@ import { CategoryChip } from "../components/CategoryChip";
 import { CenterState } from "../components/CenterState";
 import { StatusBadge } from "../components/StatusBadge";
 import { useAuth } from "../auth/useAuth";
+import { ContactSeller } from "../listings/ContactSeller";
 import { PhotoGallery } from "../listings/PhotoGallery";
 import { SellerActions } from "../listings/SellerActions";
 import { formatRelativeTime } from "../listings/time";
-
 type LoadState =
   | { status: "loading" }
   | { status: "not-found" }
@@ -183,14 +183,9 @@ function ListingDetailBody({ id }: { id?: string }) {
         />
       )}
 
-      {/* Reserved for E6's contact button — shown to everyone except the owner. Pinned to
-          the bottom on mobile, same pattern as CreateListingPage's Publish bar. */}
-      {!isOwner && (
-        <div
-          data-reserved-for="E6-contact-button"
-          className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden"
-        />
-      )}
+      {/* E6.2: the contact button and its reveal UI. Hidden entirely for the owner — they
+          manage the listing with SellerActions above instead. */}
+      {!isOwner && <ContactSeller listingId={listing.id} listingTitle={listing.title} />}
     </div>
   );
 }

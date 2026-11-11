@@ -33,7 +33,7 @@ feed pagination decisions in [ADR 0011](../decisions/0011-feed-pagination.md).
   [`POST /listings/{id}/unsold`](#post-listingsidunsold) ·
   [`GET /listings/mine`](#get-listingsmine) ·
   [`DELETE /listings/{id}/images/{image_id}`](#delete-listingsidimagesimage_id)
-  - E6 endpoint:
+- E6 endpoint:
   [`GET /listings/{id}/seller-contact`](#get-listingsidseller-contact)
 - [The publish flow, end to end](#the-publish-flow-end-to-end)
 - [Editing photos on a published listing](#editing-photos-on-a-published-listing)
